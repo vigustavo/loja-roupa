@@ -221,6 +221,17 @@ const LuminaFashion = () => {
     }
   }, [chatAberto, historicoChat]);
 
+  useEffect(() => {
+    if (menuMobileAberto) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuMobileAberto]);
+
   const mostrarNotificacao = (mensagem: string) => {
     setNotificacao(mensagem);
     window.setTimeout(() => setNotificacao(null), 3000);
@@ -413,15 +424,28 @@ const LuminaFashion = () => {
             </div>
           </div>
         </div>
+      </nav>
 
-        {menuMobileAberto && (
-          <div className="fixed inset-0 top-16 z-50 bg-white md:hidden animate-in slide-in-from-top-5 duration-300 flex flex-col border-t border-neutral-100 shadow-xl">
-            <div className="p-6 space-y-2 overflow-y-auto">
+      {menuMobileAberto && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setMenuMobileAberto(false)} />
+          <div className="relative h-full w-full bg-white flex flex-col shadow-2xl animate-slide-in-right">
+            <div className="flex items-center justify-between px-6 h-16 border-b border-neutral-100">
+              <span className="text-sm font-semibold tracking-[0.3em] uppercase text-neutral-500">Menu</span>
+              <button
+                aria-label="Fechar menu"
+                className="p-2 rounded-full hover:bg-neutral-100"
+                onClick={() => setMenuMobileAberto(false)}
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-3">
               {['NOVIDADES', 'COLEÇÃO', 'ACESSÓRIOS', 'CONTA', 'WISHLIST'].map((item) => (
-                <a
+                <button
                   key={item}
-                  href="#"
-                  className="flex items-center justify-between py-4 text-lg font-serif font-medium text-neutral-900 border-b border-neutral-50 hover:bg-neutral-50 hover:pl-2 transition-all group"
+                  type="button"
+                  className="w-full flex items-center justify-between py-4 text-lg font-serif text-left border-b border-neutral-100"
                   onClick={() => {
                     if (item === 'CONTA') {
                       setUserMenuAberto(true);
@@ -429,20 +453,19 @@ const LuminaFashion = () => {
                     setMenuMobileAberto(false);
                   }}
                 >
-                  {item}
-                  <ChevronRight size={18} className="text-neutral-300 group-hover:text-neutral-900" />
-                </a>
+                  <span>{item}</span>
+                  <ChevronRight size={18} className="text-neutral-300" />
+                </button>
               ))}
-              <div className="pt-8 flex justify-center gap-8 text-neutral-400">
-                <Instagram size={24} className="hover:text-neutral-900 cursor-pointer transition-colors" />
-                <Facebook size={24} className="hover:text-neutral-900 cursor-pointer transition-colors" />
-                <Twitter size={24} className="hover:text-neutral-900 cursor-pointer transition-colors" />
-              </div>
             </div>
-            <div className="flex-grow bg-white" onClick={() => setMenuMobileAberto(false)} />
+            <div className="border-t border-neutral-100 px-6 py-5 flex items-center justify-center gap-6 text-neutral-500">
+              <Instagram size={22} className="hover:text-neutral-900" />
+              <Facebook size={22} className="hover:text-neutral-900" />
+              <Twitter size={22} className="hover:text-neutral-900" />
+            </div>
           </div>
-        )}
-      </nav>
+        </div>
+      )}
 
       <div className="relative pt-16 md:pt-20">
         <div className="absolute inset-0 bg-black/20 md:bg-gradient-to-r md:from-neutral-900/40 md:to-transparent z-10 pointer-events-none" />
