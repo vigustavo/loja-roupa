@@ -1,4 +1,4 @@
-import React, { type FormEvent, useEffect, useState } from 'react';
+import React, { type FormEvent, useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Check,
@@ -8,6 +8,7 @@ import {
   Facebook,
   Heart,
   Instagram,
+  MessageCircle,
   LogOut,
   Mail,
   MapPin,
@@ -16,6 +17,7 @@ import {
   Search,
   Settings,
   ShoppingBag,
+  Send,
   Star,
   Twitter,
   User,
@@ -51,6 +53,13 @@ interface AuthFormState {
   nome: string;
   email: string;
   senha: string;
+}
+
+type ChatAuthor = 'bot' | 'user';
+
+interface ChatMessage {
+  tipo: ChatAuthor;
+  texto: string;
 }
 
 const PRODUTOS: Produto[] = [
@@ -175,6 +184,12 @@ const LuminaFashion = () => {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [viewAuth, setViewAuth] = useState<AuthView>('login');
   const [authForm, setAuthForm] = useState<AuthFormState>({ nome: '', email: '', senha: '' });
+  const [chatAberto, setChatAberto] = useState(false);
+  const [chatMensagem, setChatMensagem] = useState('');
+  const [historicoChat, setHistoricoChat] = useState<ChatMessage[]>([
+    { tipo: 'bot', texto: 'Olá! Bem-vinda à Lumina. Como posso ajudar você hoje?' }
+  ]);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!notificacao) {
@@ -184,6 +199,12 @@ const LuminaFashion = () => {
     const timeout = window.setTimeout(() => setNotificacao(null), 3000);
     return () => window.clearTimeout(timeout);
   }, [notificacao]);
+
+  useEffect(() => {
+    if (chatAberto && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatAberto, historicoChat]);
 
   const produtosFiltrados = categoriaAtiva === 'todos'
     ? PRODUTOS
@@ -289,6 +310,30 @@ const LuminaFashion = () => {
     setNewsletterSucesso(true);
     setEmailNewsletter('');
     window.setTimeout(() => setNewsletterSucesso(false), 5000);
+  };
+
+  const handleEnviarMensagemChat = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const mensagemLimpa = chatMensagem.trim();
+
+    if (!mensagemLimpa) {
+      return;
+    }
+
+    const novaMensagem: ChatMessage = { tipo: 'user', texto: mensagemLimpa };
+    setHistoricoChat((prev) => [...prev, novaMensagem]);
+    setChatMensagem('');
+
+    window.setTimeout(() => {
+      setHistoricoChat((prev) => [
+        ...prev,
+        {
+          tipo: 'bot',
+          texto:
+            'Obrigado pelo contato! Um de nossos consultores de estilo responderá em instantes. Enquanto isso, já conferiu nossa nova coleção?'
+        }
+      ]);
+    }, 1200);
   };
 
   const abrirQuickView = (produto: Produto) => {
@@ -673,6 +718,75 @@ const LuminaFashion = () => {
           </div>
         </div>
       </footer>
+
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+        {chatAberto && (
+          <div className="w-80 h-96 bg-white rounded-2xl shadow-2xl border border-neutral-100 flex flex-col overflow-hidden animate-slide-up origin-bottom-right">
+            <div className="bg-neutral-900 p-4 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="font-bold text-sm">Suporte Lumina</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setChatAberto(false)}
+                className="hover:bg-white/10 p-1 rounded transition-colors"
+                aria-label="Fechar chat"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-neutral-50">
+              {historicoChat.map((mensagem, index) => (
+                <div key={`chat-${index}`} className={`flex ${mensagem.tipo === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[85%] p-3 text-sm rounded-2xl shadow-sm ${
+                      mensagem.tipo === 'user'
+                        ? 'bg-neutral-900 text-white rounded-br-none'
+                        : 'bg-white border border-neutral-200 text-neutral-800 rounded-bl-none'
+                    }`}
+                  >
+                    {mensagem.texto}
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form onSubmit={handleEnviarMensagemChat} className="p-3 bg-white border-t border-neutral-100 flex gap-2">
+              <input
+                type="text"
+                value={chatMensagem}
+                onChange={(event) => setChatMensagem(event.target.value)}
+                placeholder="Digite sua mensagem..."
+                className="flex-1 bg-neutral-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-900 transition-shadow"
+              />
+              <button
+                type="submit"
+                className="p-2 bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition-colors shadow-sm disabled:opacity-50"
+                disabled={!chatMensagem.trim()}
+              >
+                <Send size={16} />
+              </button>
+            </form>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setChatAberto((prev) => !prev)}
+          className="bg-neutral-900 text-white p-4 rounded-full shadow-xl hover:bg-neutral-800 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center relative group"
+          aria-label={chatAberto ? 'Fechar chat' : 'Abrir chat'}
+        >
+          {chatAberto ? <X size={24} /> : <MessageCircle size={24} />}
+          {!chatAberto && (
+            <span className="absolute right-full mr-3 bg-white text-neutral-900 text-xs font-bold py-1 px-3 rounded shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              Fale conosco
+            </span>
+          )}
+        </button>
+      </div>
 
       {produtoQuickView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
