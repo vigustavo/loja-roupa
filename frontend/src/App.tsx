@@ -566,23 +566,23 @@ const LuminaFashion = () => {
         <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6 md:p-10 -mt-16 md:-mt-24 relative z-20 space-y-8">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <div className="flex-1">
-              <p className="text-xs tracking-[0.35em] text-neutral-400 uppercase mb-2">Curadoria rápida</p>
+              <p className="text-sm tracking-[0.2em] text-neutral-500 uppercase mb-3 font-semibold">Curadoria rápida</p>
               <div className="flex gap-2 flex-wrap">
                 {CATEGORIAS.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setCategoriaAtiva(cat.id)}
-                    className={`px-4 py-2 rounded-full text-sm border transition-all ${
+                    className={`px-5 py-2.5 rounded-full text-base border transition-all ${
                       categoriaAtiva === cat.id ? 'bg-neutral-900 text-white border-neutral-900 shadow-lg shadow-neutral-900/10' : 'border-neutral-200 text-neutral-500 hover:border-neutral-400'
                     }`}
                   >
                     <span className="font-semibold mr-2">{cat.nome}</span>
-                    <span className="text-[11px] text-neutral-400 hidden sm:inline">{cat.destaque}</span>
+                    <span className="text-xs text-neutral-500 hidden sm:inline">{cat.destaque}</span>
                   </button>
                 ))}
               </div>
             </div>
-            <div className="flex items-center justify-between w-full md:w-auto gap-4 text-xs text-neutral-500 uppercase tracking-[0.4em]">
+            <div className="flex items-center justify-between w-full md:w-auto gap-4 text-sm text-neutral-600 uppercase tracking-[0.2em]">
               <span>{produtosFiltrados.length} Peças</span>
               <span>Linho • Seda • Denim</span>
             </div>
@@ -641,16 +641,16 @@ const LuminaFashion = () => {
                     </div>
                   </div>
                   <div className="mt-3 space-y-1">
-                    <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.35em] text-neutral-400">
+                    <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-neutral-500">
                       <span>{produto.categoria}</span>
                       <span>{produto.tamanhos.join(' • ')}</span>
                     </div>
-                    <h3 className="font-serif text-lg font-semibold" onClick={() => abrirQuickView(produto)}>
+                    <h3 className="font-serif text-xl font-semibold text-neutral-900" onClick={() => abrirQuickView(produto)}>
                       {produto.nome}
                     </h3>
-                    <p className="text-sm text-neutral-500 line-clamp-2">{produto.descricao}</p>
+                    <p className="text-base text-neutral-600 line-clamp-2">{produto.descricao}</p>
                     <div className="flex items-center justify-between pt-2">
-                      <span className="text-base font-bold">R$ {formatCurrency(produto.preco)}</span>
+                      <span className="text-lg font-bold">R$ {formatCurrency(produto.preco)}</span>
                       <button
                         type="button"
                         className="text-xs font-semibold tracking-[0.3em] uppercase"
@@ -686,8 +686,16 @@ const LuminaFashion = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-6">
           <div className="absolute inset-0 bg-black/60" onClick={() => setProdutoQuickView(null)} />
           <div className="relative bg-white rounded-none md:rounded-3xl overflow-hidden shadow-2xl w-full max-w-5xl grid md:grid-cols-2">
-            <button className="absolute top-4 right-4 bg-white/80 rounded-full p-2" onClick={() => setProdutoQuickView(null)} aria-label="Fechar">
-              <X size={20} />
+            <button
+              className="absolute top-4 left-4 bg-white/90 text-neutral-900 rounded-full px-4 py-2 flex items-center gap-2 shadow md:hidden"
+              onClick={() => setProdutoQuickView(null)}
+              aria-label="Voltar para início"
+            >
+              <ChevronLeft size={18} />
+              <span className="text-sm font-semibold">voltar</span>
+            </button>
+            <button className="absolute top-4 right-4 bg-white/90 rounded-full w-11 h-11 flex items-center justify-center shadow" onClick={() => setProdutoQuickView(null)} aria-label="Fechar">
+              <X size={22} />
             </button>
 
             <div className="relative bg-neutral-100">
