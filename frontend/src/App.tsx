@@ -1,23 +1,23 @@
-import React, { type FormEvent, useEffect, useRef, useState } from 'react';
+import React, { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   Check,
+  ChevronLeft,
   ChevronRight,
   CreditCard,
   Eye,
   Facebook,
   Heart,
   Instagram,
-  MessageCircle,
-  LogOut,
   Mail,
   MapPin,
   Menu,
+  MessageCircle,
   Package,
   Search,
+  Send,
   Settings,
   ShoppingBag,
-  Send,
   Star,
   Twitter,
   User,
@@ -31,15 +31,18 @@ interface Produto {
   nome: string;
   preco: number;
   categoria: Exclude<CategoriaId, 'todos'>;
+  imagens: string[];
   imagem: string;
   novo: boolean;
   tamanhos: string[];
   descricao: string;
+  tags?: string[];
 }
 
 type CarrinhoItem = Produto & {
   qtd: number;
   tamanho: string;
+  imagemSelecionada: string;
 };
 
 type AuthView = 'login' | 'cadastro';
@@ -65,92 +68,135 @@ interface ChatMessage {
 const PRODUTOS: Produto[] = [
   {
     id: 1,
-    nome: 'Vestido Midi Floral',
-    preco: 189.9,
+    nome: 'Vestido Longo Olive',
+    preco: 289.9,
     categoria: 'vestidos',
-    imagem: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&q=80&w=800',
+    imagens: [
+      'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=900&q=80'
+    ],
+    imagem: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80',
     novo: true,
     tamanhos: ['PP', 'P', 'M', 'G'],
-    descricao:
-      'Um vestido leve e romântico, perfeito para tardes de verão. Confeccionado em viscose premium com estampa floral exclusiva.'
+    descricao: 'Modelagem fluida em viscose premium com decote halter e cintura marcada.',
+    tags: ['verde', 'viscose', 'fluidos']
   },
   {
     id: 2,
-    nome: 'Blusa de Seda Off-White',
-    preco: 129.5,
+    nome: 'Chemise Linho Off',
+    preco: 219.5,
     categoria: 'blusas',
-    imagem: 'https://images.unsplash.com/photo-1564257631407-4deb1f99d992?auto=format&fit=crop&q=80&w=800',
+    imagens: [
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80'
+    ],
+    imagem: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80',
     novo: false,
     tamanhos: ['P', 'M', 'G', 'GG'],
-    descricao:
-      'Elegância pura em seda lavada. O caimento fluido e o tom off-white tornam esta peça um curinga no guarda-roupa.'
+    descricao: 'Linho certificado com botões em madrepérola e cinto-faixa removível.',
+    tags: ['linho', 'chemise', 'off white']
   },
   {
     id: 3,
-    nome: 'Calça Alfaiataria Bege',
-    preco: 210,
+    nome: 'Calça Amélie Bege',
+    preco: 310,
     categoria: 'calcas',
-    imagem: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=800',
+    imagens: [
+      'https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1484328256245-34b717725f5b?auto=format&fit=crop&w=900&q=80'
+    ],
+    imagem: 'https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=900&q=80',
     novo: false,
     tamanhos: ['36', '38', '40', '42'],
-    descricao:
-      'Corte impecável e tecido estruturado. A calça ideal para transitar do escritório para o jantar com sofisticação.'
+    descricao: 'Cintura alta, pregas frontais e barra levemente afunilada para alongar a silhueta.',
+    tags: ['alfaiataria', 'bege', 'conforto']
   },
   {
     id: 4,
-    nome: 'Jaqueta Jeans Vintage',
-    preco: 259.9,
+    nome: 'Blazer Trench Noite',
+    preco: 459.9,
     categoria: 'casacos',
-    imagem:
-      'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=800',
+    imagens: [
+      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=900&q=80'
+    ],
+    imagem: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80',
     novo: true,
-    tamanhos: ['P', 'M', 'G'],
-    descricao:
-      'Lavagem retrô com modelagem oversized. Uma terceira peça cheia de personalidade para compor looks despojados.'
+    tamanhos: ['36', '38', '40', '42'],
+    descricao: 'Tecido com toque acetinado, recortes estruturados e forro contrastante.',
+    tags: ['blazer', 'sobretudo', 'noite']
   },
   {
     id: 5,
-    nome: 'Vestido Longo Verão',
-    preco: 159,
+    nome: 'Vestido Soleil Bordado',
+    preco: 339,
     categoria: 'vestidos',
-    imagem: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&q=80&w=800',
-    novo: false,
-    tamanhos: ['P', 'M', 'G'],
-    descricao: 'Frescor e movimento. Este vestido longo possui fendas laterais discretas e decote nas costas.'
+    imagens: [
+      'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=900&q=80'
+    ],
+    imagem: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=900&q=80',
+    novo: true,
+    tamanhos: ['PP', 'P', 'M', 'G'],
+    descricao: 'Bordados à mão e decote coração inspirado na Riviera Francesa.',
+    tags: ['bordado', 'verão', 'amarelo']
   },
   {
     id: 6,
-    nome: 'Saia Plissada Preta',
-    preco: 99.9,
-    categoria: 'calcas',
-    imagem: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?auto=format&fit=crop&q=80&w=800',
+    nome: 'Cardigã Nuage Cashmere',
+    preco: 399.9,
+    categoria: 'casacos',
+    imagens: [
+      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80'
+    ],
+    imagem: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80',
     novo: false,
     tamanhos: ['P', 'M', 'G'],
-    descricao: 'O clássico plissado em versão midi. Versátil, combina tanto com tênis quanto com salto alto.'
+    descricao: 'Cashmere sustentável com botões de resina e mangas volumosas.',
+    tags: ['cashmere', 'macio', 'inverno']
   },
   {
     id: 7,
-    nome: 'Blazer Clássico',
-    preco: 320,
-    categoria: 'casacos',
-    imagem: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=800',
-    novo: true,
-    tamanhos: ['38', '40', '42', '44'],
-    descricao: 'Alfaiataria de ponta com forro acetinado. A peça-chave para elevar qualquer produção instantaneamente.'
+    nome: 'Blusa Aurora Seda',
+    preco: 259.9,
+    categoria: 'blusas',
+    imagens: [
+      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1484328256245-34b717725f5b?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80'
+    ],
+    imagem: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80',
+    novo: false,
+    tamanhos: ['PP', 'P', 'M', 'G'],
+    descricao: 'Seda com leve brilho e laço removível para diferentes amarrações.',
+    tags: ['seda', 'aurora', 'rosa']
   },
   {
     id: 8,
-    nome: 'Top Cropped Linho',
-    preco: 79.9,
-    categoria: 'blusas',
-    imagem: 'https://images.unsplash.com/photo-1503185912284-5271ff81b9a8?auto=format&fit=crop&q=80&w=800',
+    nome: 'Saia Midi Horizon',
+    preco: 199.9,
+    categoria: 'calcas',
+    imagens: [
+      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80'
+    ],
+    imagem: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80',
     novo: false,
-    tamanhos: ['P', 'M', 'G'],
-    descricao: 'Linho misto para garantir frescor. Modelagem estruturada que valoriza o colo.'
+    tamanhos: ['34', '36', '38', '40'],
+    descricao: 'Recortes arquitetônicos e pala interna para ajuste perfeito na cintura.',
+    tags: ['saia', 'arquitetura', 'grafismo']
   }
 ];
 
-const CATEGORIAS: Array<{ id: CategoriaId; nome: string; destaque: string }> = [
+const CATEGORIAS: Array<{ id: CategoriaId; nome: string; destaque?: string }> = [
   { id: 'todos', nome: 'Todas', destaque: 'Coleção completa' },
   { id: 'vestidos', nome: 'Vestidos', destaque: 'Silhuetas fluidas' },
   { id: 'blusas', nome: 'Blusas', destaque: 'Texturas leves' },
@@ -158,13 +204,13 @@ const CATEGORIAS: Array<{ id: CategoriaId; nome: string; destaque: string }> = [
   { id: 'casacos', nome: 'Casacos', destaque: 'Camadas urbanas' }
 ];
 
-const MENU_DESKTOP = ['NOVIDADES', 'COLEÇÃO', 'ACESSÓRIOS', 'EDITORIAL'];
-const MENU_MOBILE = ['NOVIDADES', 'COLEÇÃO', 'ACESSÓRIOS', 'CONTA', 'WISHLIST'];
+const MENU_DESKTOP = ['NOVIDADES', 'COLEÇÃO', 'EDITORIAL', 'LIFESTYLE'];
+const MENU_MOBILE = [...MENU_DESKTOP, 'CONTA', 'WISHLIST'];
 
 const SHOP_FEATURES = [
   { icon: ShoppingBag, title: 'Envio Grátis', desc: 'Acima de R$ 299' },
-  { icon: Star, title: 'Qualidade Premium', desc: 'Materiais nobres' },
-  { icon: ArrowRight, title: 'Troca Facilitada', desc: '30 dias grátis' }
+  { icon: Star, title: 'Materiais Premium', desc: 'Com certificação' },
+  { icon: ArrowRight, title: 'Troca Estendida', desc: '30 dias de conforto' }
 ];
 
 const formatCurrency = (valor: number) => valor.toFixed(2).replace('.', ',');
@@ -175,8 +221,11 @@ const LuminaFashion = () => {
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>('todos');
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const [termoBusca, setTermoBusca] = useState('');
   const [notificacao, setNotificacao] = useState<string | null>(null);
   const [produtoQuickView, setProdutoQuickView] = useState<Produto | null>(null);
+  const [indiceImagemAtiva, setIndiceImagemAtiva] = useState(0);
   const [tamanhoSelecionado, setTamanhoSelecionado] = useState<string | null>(null);
   const [emailNewsletter, setEmailNewsletter] = useState('');
   const [newsletterSucesso, setNewsletterSucesso] = useState(false);
@@ -195,8 +244,7 @@ const LuminaFashion = () => {
     if (!notificacao) {
       return undefined;
     }
-
-    const timeout = window.setTimeout(() => setNotificacao(null), 3000);
+    const timeout = window.setTimeout(() => setNotificacao(null), 3200);
     return () => window.clearTimeout(timeout);
   }, [notificacao]);
 
@@ -206,9 +254,17 @@ const LuminaFashion = () => {
     }
   }, [chatAberto, historicoChat]);
 
-  const produtosFiltrados = categoriaAtiva === 'todos'
-    ? PRODUTOS
-    : PRODUTOS.filter((produto) => produto.categoria === categoriaAtiva);
+  const produtosFiltrados = useMemo(() => {
+    const termo = termoBusca.trim().toLowerCase();
+    return PRODUTOS.filter((produto) => {
+      const passaCategoria = categoriaAtiva === 'todos' || produto.categoria === categoriaAtiva;
+      if (!termo) {
+        return passaCategoria;
+      }
+      const campoBusca = `${produto.nome} ${produto.descricao} ${produto.tags?.join(' ') ?? ''}`.toLowerCase();
+      return passaCategoria && campoBusca.includes(termo);
+    });
+  }, [categoriaAtiva, termoBusca]);
 
   const totalItens = carrinho.reduce((acc, item) => acc + item.qtd, 0);
   const totalValor = carrinho.reduce((acc, item) => acc + item.preco * item.qtd, 0);
@@ -217,21 +273,20 @@ const LuminaFashion = () => {
     setNotificacao(mensagem);
   };
 
-  const adicionarAoCarrinho = (produto: Produto, tamanho?: string | null) => {
-    const tamanhoFinal = tamanho ?? produto.tamanhos[0];
+  const adicionarAoCarrinho = (produto: Produto, options?: { tamanho?: string | null; imagem?: string }) => {
+    const tamanhoFinal = options?.tamanho ?? produto.tamanhos[0];
+    const imagemSelecionada = options?.imagem ?? produto.imagens[0] ?? produto.imagem;
 
     setCarrinho((prev) => {
-      const itemExistente = prev.find((item) => item.id === produto.id && item.tamanho === tamanhoFinal);
-
-      if (itemExistente) {
+      const existente = prev.find((item) => item.id === produto.id && item.tamanho === tamanhoFinal && item.imagemSelecionada === imagemSelecionada);
+      if (existente) {
         return prev.map((item) =>
-          item.id === produto.id && item.tamanho === tamanhoFinal
+          item.id === produto.id && item.tamanho === tamanhoFinal && item.imagemSelecionada === imagemSelecionada
             ? { ...item, qtd: item.qtd + 1 }
             : item
         );
       }
-
-      return [...prev, { ...produto, qtd: 1, tamanho: tamanhoFinal }];
+      return [...prev, { ...produto, qtd: 1, tamanho: tamanhoFinal, imagemSelecionada }];
     });
 
     setCarrinhoAberto(true);
@@ -245,24 +300,22 @@ const LuminaFashion = () => {
         mostrarNotificacao('Removido dos favoritos');
         return prev.filter((id) => id !== produtoId);
       }
-
       mostrarNotificacao('Adicionado aos favoritos ❤️');
       return [...prev, produtoId];
     });
   };
 
-  const removerDoCarrinho = (id: number, tamanho: string) => {
-    setCarrinho((prev) => prev.filter((item) => !(item.id === id && item.tamanho === tamanho)));
+  const removerDoCarrinho = (id: number, tamanho: string, imagem: string) => {
+    setCarrinho((prev) => prev.filter((item) => !(item.id === id && item.tamanho === tamanho && item.imagemSelecionada === imagem)));
   };
 
-  const alterarQtd = (id: number, tamanho: string, delta: number) => {
+  const alterarQtd = (id: number, tamanho: string, imagem: string, delta: number) => {
     setCarrinho((prev) =>
       prev.map((item) => {
-        if (item.id === id && item.tamanho === tamanho) {
+        if (item.id === id && item.tamanho === tamanho && item.imagemSelecionada === imagem) {
           const novaQtd = Math.max(1, item.qtd + delta);
           return { ...item, qtd: novaQtd };
         }
-
         return item;
       })
     );
@@ -279,8 +332,8 @@ const LuminaFashion = () => {
     }
 
     if (viewAuth === 'login') {
-      setUsuario({ nome: 'Visitante', email: authForm.email });
-      mostrarNotificacao('Bem-vindo de volta!');
+      setUsuario({ nome: 'Visitante Lumina', email: authForm.email });
+      mostrarNotificacao('Bem-vinda novamente!');
     } else {
       setUsuario({ nome: authForm.nome || 'Cliente Lumina', email: authForm.email });
       mostrarNotificacao('Conta criada com sucesso!');
@@ -290,15 +343,15 @@ const LuminaFashion = () => {
   };
 
   const handleSocialLogin = (provider: 'Google' | 'Apple' | 'Facebook') => {
-    setUsuario({ nome: `Usuário ${provider}`, email: `usuario@${provider.toLowerCase()}.com` });
+    setUsuario({ nome: `Usuário ${provider}`, email: `cliente@${provider.toLowerCase()}.com` });
     setViewAuth('login');
-    mostrarNotificacao(`Login com ${provider} realizado com sucesso!`);
+    mostrarNotificacao(`Login com ${provider} realizado!`);
   };
 
   const handleLogout = () => {
     setUsuario(null);
     setViewAuth('login');
-    mostrarNotificacao('Sessão terminada');
+    mostrarNotificacao('Sessão encerrada');
   };
 
   const handleNewsletterSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -306,16 +359,14 @@ const LuminaFashion = () => {
     if (!emailNewsletter) {
       return;
     }
-
     setNewsletterSucesso(true);
     setEmailNewsletter('');
-    window.setTimeout(() => setNewsletterSucesso(false), 5000);
+    window.setTimeout(() => setNewsletterSucesso(false), 4500);
   };
 
   const handleEnviarMensagemChat = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const mensagemLimpa = chatMensagem.trim();
-
     if (!mensagemLimpa) {
       return;
     }
@@ -329,8 +380,7 @@ const LuminaFashion = () => {
         ...prev,
         {
           tipo: 'bot',
-          texto:
-            'Obrigado pelo contato! Um de nossos consultores de estilo responderá em instantes. Enquanto isso, já conferiu nossa nova coleção?'
+          texto: 'Já localizei uma stylist disponível. Enquanto isso, posso sugerir peças que combinem com o que você procura.'
         }
       ]);
     }, 1200);
@@ -338,67 +388,107 @@ const LuminaFashion = () => {
 
   const abrirQuickView = (produto: Produto) => {
     setProdutoQuickView(produto);
+    setIndiceImagemAtiva(0);
     setTamanhoSelecionado(produto.tamanhos[0]);
   };
 
+  const navegarGaleria = (direcao: 'prev' | 'next') => {
+    if (!produtoQuickView) {
+      return;
+    }
+    setIndiceImagemAtiva((prev) => {
+      const total = produtoQuickView.imagens.length;
+      if (direcao === 'next') {
+        return (prev + 1) % total;
+      }
+      return (prev - 1 + total) % total;
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-neutral-50 font-sans text-neutral-800 selection:bg-rose-200 selection:text-rose-900 overflow-x-hidden">
+    <div className="min-h-screen bg-neutral-50 text-neutral-900">
       {notificacao && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-4 bg-neutral-900 text-white px-6 py-4 rounded-full md:rounded shadow-2xl z-50 animate-fade-in-down flex items-center gap-3 w-[90%] md:w-auto justify-center md:justify-start">
-          <div className="bg-white/20 p-1 rounded-full">
-            <Check size={14} />
-          </div>
-          <span className="text-sm font-medium whitespace-nowrap">{notificacao}</span>
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 md:left-auto md:right-6 md:translate-x-0 bg-neutral-900 text-white px-6 py-3 rounded-full shadow-xl z-50 flex items-center gap-2 animate-fade-in-down">
+          <Check size={14} />
+          <span className="text-sm font-medium">{notificacao}</span>
         </div>
       )}
 
-      <nav className="fixed w-full bg-white z-40 border-b border-neutral-100 shadow-sm transition-all duration-300">
+      <nav className="fixed w-full bg-white z-40 border-b border-neutral-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 md:h-20">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between h-16 md:h-20">
+            <div className="flex items-center gap-3">
               <button
-                className="p-2 -ml-2 hover:bg-neutral-100 rounded-full md:hidden text-neutral-900"
+                className="p-2 -ml-2 hover:bg-neutral-100 rounded-full md:hidden"
                 onClick={() => setMenuMobileAberto((prev) => !prev)}
                 aria-label="Abrir menu"
               >
-                <Menu size={24} />
+                <Menu size={22} />
               </button>
-              <a href="#" className="text-xl md:text-2xl font-serif font-bold tracking-tighter text-neutral-900">
-                LUMINA
-              </a>
+              <a href="#" className="text-2xl font-serif font-bold tracking-tight">LUMINA</a>
             </div>
 
-            <div className="hidden md:flex space-x-8 text-sm font-medium tracking-wide text-neutral-500">
+            <div className="hidden md:flex gap-8 text-sm tracking-wide text-neutral-500">
               {MENU_DESKTOP.map((item) => (
-                <a key={item} href="#" className="hover:text-neutral-900 transition-colors relative group">
-                  {item}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-neutral-900 transition-all group-hover:w-full" />
-                </a>
+                <button key={item} className="relative group" type="button">
+                  <span className="font-medium">{item}</span>
+                  <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-neutral-900 transition-all group-hover:w-full" />
+                </button>
               ))}
             </div>
 
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <button className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-600" aria-label="Buscar">
-                <Search size={20} className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
+            <div className="flex items-center gap-1 md:gap-3">
+              <div className="relative">
+                <button
+                  className={`p-2 rounded-full transition-colors ${buscaAberta ? 'bg-neutral-900 text-white' : 'hover:bg-neutral-100 text-neutral-600'}`}
+                  onClick={() => setBuscaAberta((prev) => !prev)}
+                  aria-label="Buscar produtos"
+                >
+                  <Search size={20} />
+                </button>
+
+                <div
+                  className={`absolute right-0 mt-2 w-[80vw] max-w-md bg-white border border-neutral-100 rounded-2xl shadow-2xl p-5 transition-all duration-200 ${
+                    buscaAberta ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+                  }`}
+                >
+                  <p className="text-[11px] font-semibold tracking-[0.3em] text-neutral-400 mb-3 uppercase">Buscar</p>
+                  <div className="flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded-full px-4 py-2">
+                    <Search size={16} className="text-neutral-400" />
+                    <input
+                      type="text"
+                      value={termoBusca}
+                      onChange={(event) => setTermoBusca(event.target.value)}
+                      placeholder="o que você procura?"
+                      className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none"
+                    />
+                    {termoBusca && (
+                      <button type="button" onClick={() => setTermoBusca('')} className="text-xs text-neutral-400 hover:text-neutral-700">
+                        limpar
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-4 text-xs text-neutral-400">{produtosFiltrados.length} resultados curados</div>
+                </div>
+              </div>
 
               <button
-                className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-600"
+                className="p-2 hover:bg-neutral-100 rounded-full text-neutral-600"
                 onClick={() => setUserMenuAberto(true)}
-                aria-label={usuario ? 'Abrir painel da conta' : 'Entrar na conta'}
+                aria-label={usuario ? 'Abrir conta' : 'Entrar'}
               >
-                <User size={20} className="w-5 h-5 md:w-6 md:h-6" />
+                <User size={20} />
               </button>
 
               <div className="relative">
                 <button
-                  className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-600"
+                  className="p-2 hover:bg-neutral-100 rounded-full text-neutral-600"
                   onClick={() => setCarrinhoAberto(true)}
-                  aria-label="Abrir carrinho"
+                  aria-label="Abrir sacola"
                 >
-                  <ShoppingBag size={20} className="w-5 h-5 md:w-6 md:h-6" />
+                  <ShoppingBag size={20} />
                   {totalItens > 0 && (
-                    <span className="absolute top-1 right-0.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-neutral-900 rounded-full border border-white">
+                    <span className="absolute top-1 right-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-neutral-900 rounded-full border border-white">
                       {totalItens}
                     </span>
                   )}
@@ -409,13 +499,23 @@ const LuminaFashion = () => {
         </div>
 
         {menuMobileAberto && (
-          <div className="fixed inset-0 top-16 z-30 bg-white md:hidden animate-fade-in flex flex-col border-t border-neutral-100 shadow-2xl">
-            <div className="p-6 space-y-2 overflow-y-auto">
+          <div className="fixed inset-0 top-16 z-30 bg-white md:hidden border-t border-neutral-100 animate-fade-in flex flex-col">
+            <div className="p-6 space-y-4">
+              <div className="bg-neutral-100 rounded-full px-4 py-2 flex items-center gap-2">
+                <Search size={18} className="text-neutral-500" />
+                <input
+                  type="text"
+                  value={termoBusca}
+                  onChange={(event) => setTermoBusca(event.target.value)}
+                  placeholder="Busque na coleção"
+                  className="flex-1 bg-transparent text-sm focus:outline-none"
+                />
+              </div>
               {MENU_MOBILE.map((item) => (
                 <button
                   key={item}
                   type="button"
-                  className="flex items-center justify-between w-full py-4 text-lg font-serif font-medium text-neutral-900 border-b border-neutral-50 hover:bg-neutral-50 hover:pl-2 transition-all"
+                  className="flex items-center justify-between py-4 text-lg font-serif border-b border-neutral-100"
                   onClick={() => {
                     if (item === 'CONTA') {
                       setUserMenuAberto(true);
@@ -423,274 +523,309 @@ const LuminaFashion = () => {
                     setMenuMobileAberto(false);
                   }}
                 >
-                  <span>{item}</span>
-                  <ChevronRight size={18} className="text-neutral-300" />
+                  {item}
+                  <ChevronRight size={16} className="text-neutral-300" />
                 </button>
               ))}
-              <div className="pt-8 flex justify-center gap-8 text-neutral-400">
-                <Instagram size={24} className="hover:text-neutral-900 transition-colors" />
-                <Facebook size={24} className="hover:text-neutral-900 transition-colors" />
-                <Twitter size={24} className="hover:text-neutral-900 transition-colors" />
-              </div>
             </div>
           </div>
         )}
       </nav>
 
       <div className="relative pt-16 md:pt-20">
-        <div className="absolute inset-0 bg-black/20 md:bg-gradient-to-r md:from-neutral-900/40 md:to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10 pointer-events-none" />
         <div
-          className="h-[55vh] md:h-[75vh] bg-cover bg-center bg-fixed flex items-center px-4"
+          className="h-[60vh] md:h-[80vh] bg-cover bg-center flex items-center"
           style={{
-            backgroundImage:
-              'url(\'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=2000\')'
+            backgroundImage: "url('https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=2000')"
           }}
         >
-          <div className="relative z-20 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 text-center md:text-left">
-            <div className="max-w-xl text-white animate-slide-up mx-auto md:mx-0">
-              <span className="inline-block border border-white/40 px-3 py-1 text-[10px] md:text-xs font-bold tracking-[0.2em] mb-4 md:mb-6 uppercase backdrop-blur-sm">
-                Verão 2025
+          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div className="max-w-lg text-white space-y-6">
+              <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.4em] font-semibold uppercase">
+                <span className="w-2 h-2 bg-white rounded-full" /> verao 25 • drop ii
               </span>
-              <h1 className="text-4xl md:text-7xl font-serif font-bold mb-4 md:mb-6 leading-none shadow-sm">
-                Essência <br /> Natural
-              </h1>
-              <p className="text-sm md:text-xl text-white/90 mb-6 md:mb-8 font-light max-w-md mx-auto md:mx-0 leading-relaxed">
-                Tecidos fluidos e tons terrosos. Descubra a nova coleção.
+              <h1 className="text-4xl md:text-6xl font-serif font-bold leading-tight">Manifesto da pele descansada</h1>
+              <p className="text-sm md:text-lg text-white/80">
+                Peças que respiram, inspiradas nas margens mediterrâneas. Curadoria autoral com tons minerais e texturas sensoriais.
               </p>
-              <button className="bg-white text-neutral-900 px-8 py-3 md:px-10 md:py-4 text-xs md:text-sm font-bold tracking-wider hover:bg-neutral-100 transition-all shadow-lg w-full md:w-auto">
-                EXPLORAR COLEÇÃO
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button className="bg-white text-neutral-900 px-8 py-3 text-xs md:text-sm font-bold tracking-[0.3em] hover:bg-neutral-100 transition-all">
+                  explorar cápsula
+                </button>
+                <button className="border border-white/40 text-white px-8 py-3 text-xs md:text-sm font-bold tracking-[0.3em] hover:bg-white hover:text-neutral-900 transition-all">
+                  assistir editorial
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-
-        <div className="sticky top-16 md:top-20 z-30 bg-neutral-50/95 backdrop-blur py-3 md:py-4 -mx-4 px-4 md:mx-0 md:px-6 border-b md:border-none border-neutral-100 mb-6 md:mb-12 transition-all relative overflow-hidden rounded-none md:rounded-3xl">
-          <div className="absolute inset-y-0 right-[-15%] w-1/2 bg-gradient-to-l from-rose-50 via-transparent to-transparent blur-3xl opacity-80 hidden md:block" aria-hidden="true" />
-          <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0 relative z-10">
-            <h2 className="text-xl md:text-3xl font-serif font-bold text-neutral-900 hidden md:block">
-              {categoriaAtiva === 'todos'
-                ? 'Destaques da Semana'
-                : CATEGORIAS.find((cat) => cat.id === categoriaAtiva)?.nome}
-            </h2>
-            <div className="grid grid-cols-2 gap-2 w-full justify-start md:w-auto md:flex md:flex-nowrap md:overflow-x-auto md:space-x-2 md:pb-0 md:flex-1 md:justify-end">
-              {CATEGORIAS.map((cat, index) => {
-                const precisaPreencher = CATEGORIAS.length % 2 === 1;
-                const ehUltimo = index === CATEGORIAS.length - 1;
-                const ocuparLinhaInteira = precisaPreencher && ehUltimo;
-                return (
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+        <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm p-6 md:p-10 -mt-16 md:-mt-24 relative z-20 space-y-8">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex-1">
+              <p className="text-xs tracking-[0.35em] text-neutral-400 uppercase mb-2">Curadoria rápida</p>
+              <div className="flex gap-2 flex-wrap">
+                {CATEGORIAS.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setCategoriaAtiva(cat.id)}
-                    aria-pressed={categoriaAtiva === cat.id}
-                    className={`group relative flex items-center gap-3 md:gap-4 px-4 py-2 md:px-5 md:py-3 rounded-full border transition-all duration-300 w-full md:w-auto ${
-                      categoriaAtiva === cat.id
-                        ? 'bg-neutral-900 text-white border-neutral-900 shadow-lg shadow-neutral-900/20 scale-[1.01]'
-                        : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400 hover:text-neutral-900 hover:shadow-sm'
-                    } ${ocuparLinhaInteira ? 'col-span-2' : 'col-span-1'} md:col-span-1 md:flex-shrink-0`}
+                    className={`px-4 py-2 rounded-full text-sm border transition-all ${
+                      categoriaAtiva === cat.id ? 'bg-neutral-900 text-white border-neutral-900 shadow-lg shadow-neutral-900/10' : 'border-neutral-200 text-neutral-500 hover:border-neutral-400'
+                    }`}
                   >
-                    <span
-                      className={`inline-flex w-2 h-2 rounded-full transition-colors duration-300 ${
-                        categoriaAtiva === cat.id ? 'bg-white' : 'bg-neutral-300 group-hover:bg-neutral-500'
-                      }`}
+                    <span className="font-semibold mr-2">{cat.nome}</span>
+                    <span className="text-[11px] text-neutral-400 hidden sm:inline">{cat.destaque}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between w-full md:w-auto gap-4 text-xs text-neutral-500 uppercase tracking-[0.4em]">
+              <span>{produtosFiltrados.length} Peças</span>
+              <span>Linho • Seda • Denim</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-8 md:gap-8">
+            {produtosFiltrados.map((produto) => {
+              const imagemPrincipal = produto.imagens[0] ?? produto.imagem;
+              return (
+                <div key={produto.id} className="group">
+                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-100 shadow-sm">
+                    <img
+                      src={imagemPrincipal}
+                      alt={produto.nome}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
+                      onClick={() => abrirQuickView(produto)}
                     />
-                    <div className="flex flex-col text-left leading-tight">
-                      <span className="text-[11px] md:text-xs font-semibold tracking-wide uppercase">{cat.nome}</span>
-                      <span
-                        className={`text-[9px] md:text-[10px] font-medium ${
-                          categoriaAtiva === cat.id ? 'text-white/80' : 'text-neutral-400 group-hover:text-neutral-500'
-                        }`}
-                      >
-                        {cat.destaque}
+                    {produto.novo && (
+                      <span className="absolute top-4 left-4 bg-white text-neutral-900 text-[10px] font-bold tracking-[0.4em] px-3 py-1 rounded-full">
+                        novo
                       </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleWishlist(produto.id);
+                      }}
+                      className={`absolute top-4 right-4 p-2 bg-white rounded-full shadow-md transition-colors ${
+                        wishlist.includes(produto.id) ? 'text-rose-500' : 'text-neutral-900'
+                      }`}
+                      aria-label="Favoritar"
+                    >
+                      <Heart size={18} className={wishlist.includes(produto.id) ? 'fill-rose-500' : undefined} />
+                    </button>
+                    <div className="hidden md:flex absolute inset-x-4 bottom-4 gap-3 opacity-0 group-hover:opacity-100 translate-y-3 group-hover:translate-y-0 transition-all">
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          abrirQuickView(produto);
+                        }}
+                        className="flex-1 bg-white/95 backdrop-blur text-neutral-900 py-3 text-sm font-semibold rounded-lg flex items-center justify-center gap-2"
+                      >
+                        <Eye size={16} /> ver detalhes
+                      </button>
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          adicionarAoCarrinho(produto);
+                        }}
+                        className="p-3 rounded-lg bg-neutral-900 text-white"
+                        aria-label="Adicionar rápido"
+                      >
+                        <ShoppingBag size={16} />
+                      </button>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="hidden md:flex items-center justify-end gap-6 mt-4 text-[11px] tracking-[0.35em] text-neutral-400 uppercase relative z-10">
-            <span>120 PEÇAS CURADAS</span>
-            <span>LINHO · SEDA · JEANS</span>
-            <span>DROP EXCLUSIVO</span>
+                  </div>
+                  <div className="mt-3 space-y-1">
+                    <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.35em] text-neutral-400">
+                      <span>{produto.categoria}</span>
+                      <span>{produto.tamanhos.join(' • ')}</span>
+                    </div>
+                    <h3 className="font-serif text-lg font-semibold" onClick={() => abrirQuickView(produto)}>
+                      {produto.nome}
+                    </h3>
+                    <p className="text-sm text-neutral-500 line-clamp-2">{produto.descricao}</p>
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-base font-bold">R$ {formatCurrency(produto.preco)}</span>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold tracking-[0.3em] uppercase"
+                        onClick={() => adicionarAoCarrinho(produto)}
+                      >
+                        adicionar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-8 md:gap-y-12">
-          {produtosFiltrados.map((produto) => (
-            <div key={produto.id} className="group relative">
-              <div className="aspect-[3/4] w-full overflow-hidden rounded-md bg-neutral-200 relative shadow-sm md:group-hover:shadow-xl transition-all duration-300">
-                <img
-                  src={produto.imagem}
-                  alt={produto.nome}
-                  className="h-full w-full object-cover object-center md:group-hover:scale-105 transition-transform duration-700 ease-out"
-                  onClick={() => abrirQuickView(produto)}
-                />
-
-                {produto.novo && (
-                  <span className="absolute top-2 left-2 md:top-3 md:left-3 bg-neutral-900 text-white px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-[10px] font-bold tracking-wider uppercase shadow-sm z-10">
-                    Novo
-                  </span>
-                )}
-
-                <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    adicionarAoCarrinho(produto);
-                  }}
-                  className="absolute bottom-2 right-2 p-2 bg-white/90 text-neutral-900 rounded-full shadow-md md:hidden active:scale-95 transition-transform z-10"
-                  aria-label="Adicionar ao carrinho"
-                >
-                  <ShoppingBag size={18} />
-                </button>
-
-                <div className="hidden md:flex absolute inset-x-0 bottom-4 px-4 justify-between items-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 z-20">
-                  <button
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      abrirQuickView(produto);
-                    }}
-                    className="flex-1 bg-white/95 backdrop-blur text-neutral-900 py-3 text-sm font-bold shadow-lg hover:bg-neutral-900 hover:text-white transition-colors rounded-sm flex items-center justify-center gap-2 mr-2"
-                  >
-                    <Eye size={16} /> Espiar
-                  </button>
-                  <button
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      adicionarAoCarrinho(produto);
-                    }}
-                    className="bg-neutral-900 text-white p-3 shadow-lg hover:bg-neutral-700 transition-colors rounded-sm"
-                    title="Adicionar rápido"
-                    aria-label="Adicionar rápido"
-                  >
-                    <ShoppingBag size={16} />
-                  </button>
-                </div>
-
-                <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleWishlist(produto.id);
-                  }}
-                  className={`absolute top-2 right-2 md:top-3 md:right-3 p-1.5 md:p-2 bg-white/70 backdrop-blur rounded-full shadow-sm md:opacity-0 md:group-hover:opacity-100 transition-all transform md:scale-90 md:group-hover:scale-100 z-10 ${
-                    wishlist.includes(produto.id) ? 'opacity-100' : ''
-                  }`}
-                  aria-label="Favoritar"
-                >
-                  <Heart
-                    size={16}
-                    className={`transition-colors ${wishlist.includes(produto.id) ? 'fill-rose-500 text-rose-500' : 'text-neutral-900'}`}
-                  />
-                </button>
-              </div>
-
-              <div className="mt-3 md:mt-5 space-y-0.5 md:space-y-1">
-                <h3 className="text-sm md:text-base font-medium text-neutral-900 line-clamp-1" onClick={() => abrirQuickView(produto)}>
-                  {produto.nome}
-                </h3>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                  <p className="text-sm md:text-base font-semibold text-neutral-900">R$ {formatCurrency(produto.preco)}</p>
-                  <p className="text-[10px] md:text-sm text-neutral-500 capitalize">{produto.categoria}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-16 md:mt-32 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 border-t border-neutral-200 pt-10 md:pt-16">
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
           {SHOP_FEATURES.map((feature) => {
             const Icon = feature.icon;
-            const isFreteGratis = feature.title === 'Envio Grátis';
-            const isQualidade = feature.title === 'Qualidade Premium';
-            const isTroca = feature.title === 'Troca Facilitada';
-            const highlight = isFreteGratis || isQualidade || isTroca;
             return (
-              <div
-                key={feature.title}
-                className={`group flex flex-row md:flex-col items-center md:text-center p-4 md:p-6 rounded-lg border border-neutral-100 shadow-sm md:shadow-none transition-all duration-300 ${
-                  highlight
-                    ? 'bg-white hover:bg-neutral-900 hover:text-white hover:-translate-y-1 hover:shadow-lg'
-                    : 'bg-white md:border-transparent md:hover:border-neutral-100 hover:-translate-y-1'
-                }`}
-              >
-                <div
-                  className={`w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center mr-4 md:mr-0 md:mb-5 flex-shrink-0 transition-colors duration-300 ${
-                    highlight
-                      ? 'bg-neutral-100 text-neutral-900 group-hover:bg-white group-hover:text-neutral-900'
-                      : 'bg-neutral-100 text-neutral-900'
-                  }`}
-                >
-                  <Icon size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
+              <div key={feature.title} className="p-6 bg-white rounded-2xl border border-neutral-100 shadow-sm hover:-translate-y-1 transition-transform">
+                <div className="w-12 h-12 rounded-full bg-neutral-900 text-white flex items-center justify-center mb-4">
+                  <Icon size={20} />
                 </div>
-                <div className="text-left md:text-center">
-                  <h3 className={`font-bold text-sm md:text-lg mb-0.5 md:mb-2 ${highlight ? 'transition-colors duration-300' : ''}`}>
-                    {feature.title}
-                  </h3>
-                  <p className={`text-xs md:text-sm ${highlight ? 'text-neutral-500 group-hover:text-neutral-200 transition-colors duration-300' : 'text-neutral-500'}`}>
-                    {feature.desc}
-                  </p>
-                </div>
+                <h3 className="text-lg font-semibold mb-1">{feature.title}</h3>
+                <p className="text-sm text-neutral-500">{feature.desc}</p>
               </div>
             );
           })}
         </div>
       </main>
 
-      <footer className="bg-neutral-900 text-white pt-10 md:pt-20 pb-8 md:pb-10">
+      {produtoQuickView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-6">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setProdutoQuickView(null)} />
+          <div className="relative bg-white rounded-none md:rounded-3xl overflow-hidden shadow-2xl w-full max-w-5xl grid md:grid-cols-2">
+            <button className="absolute top-4 right-4 bg-white/80 rounded-full p-2" onClick={() => setProdutoQuickView(null)} aria-label="Fechar">
+              <X size={20} />
+            </button>
+
+            <div className="relative bg-neutral-100">
+              <img
+                src={produtoQuickView.imagens[indiceImagemAtiva]}
+                alt={produtoQuickView.nome}
+                className="w-full h-[50vh] md:h-full object-cover"
+              />
+              <button
+                type="button"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2"
+                onClick={() => navegarGaleria('prev')}
+                aria-label="Imagem anterior"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2"
+                onClick={() => navegarGaleria('next')}
+                aria-label="Próxima imagem"
+              >
+                <ChevronRight size={20} />
+              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {produtoQuickView.imagens.map((imagem, index) => (
+                  <button
+                    key={imagem}
+                    type="button"
+                    onClick={() => setIndiceImagemAtiva(index)}
+                    className={`w-3 h-3 rounded-full border border-white ${index === indiceImagemAtiva ? 'bg-white' : 'bg-white/50'}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6 md:p-10 flex flex-col">
+              <span className="text-[11px] tracking-[0.4em] text-neutral-400 uppercase">{produtoQuickView.categoria}</span>
+              <h2 className="text-3xl font-serif font-semibold mt-3">{produtoQuickView.nome}</h2>
+              <p className="text-2xl font-semibold mt-2">R$ {formatCurrency(produtoQuickView.preco)}</p>
+              <p className="text-sm text-neutral-500 mt-4 leading-relaxed">{produtoQuickView.descricao}</p>
+
+              <div className="mt-6">
+                <div className="flex items-center justify-between text-sm font-semibold text-neutral-600">
+                  <span>Tamanhos</span>
+                  <button type="button" className="text-xs underline">
+                    Guia de medidas
+                  </button>
+                </div>
+                <div className="flex gap-3 mt-3">
+                  {produtoQuickView.tamanhos.map((tamanho) => (
+                    <button
+                      key={tamanho}
+                      onClick={() => setTamanhoSelecionado(tamanho)}
+                      className={`w-12 h-12 border rounded-xl text-sm font-semibold transition-all ${
+                        tamanhoSelecionado === tamanho ? 'bg-neutral-900 text-white border-neutral-900' : 'border-neutral-200'
+                      }`}
+                    >
+                      {tamanho}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button
+                  className="flex-1 bg-neutral-900 text-white py-4 rounded-xl font-semibold tracking-[0.3em]"
+                  onClick={() =>
+                    adicionarAoCarrinho(produtoQuickView, {
+                      tamanho: tamanhoSelecionado,
+                      imagem: produtoQuickView.imagens[indiceImagemAtiva]
+                    })
+                  }
+                >
+                  adicionar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleWishlist(produtoQuickView.id)}
+                  className={`w-14 rounded-xl border flex items-center justify-center ${
+                    wishlist.includes(produtoQuickView.id)
+                      ? 'border-rose-200 bg-rose-50 text-rose-500'
+                      : 'border-neutral-200 text-neutral-600'
+                  }`}
+                >
+                  <Heart size={20} className={wishlist.includes(produtoQuickView.id) ? 'fill-rose-500' : undefined} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <footer className="bg-neutral-900 text-white pt-16 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 mb-10 md:mb-16">
-            <div className="md:col-span-1 text-center md:text-left">
-              <h2 className="text-2xl md:text-3xl font-serif font-bold mb-4 md:mb-6 tracking-tight">LUMINA</h2>
-              <p className="text-neutral-400 text-sm leading-relaxed mb-6 hidden md:block">
-                Curadoria de moda para mulheres que buscam autenticidade. Peças atemporais criadas com consciência e estilo.
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+            <div>
+              <h3 className="text-3xl font-serif font-semibold mb-4">Lumina</h3>
+              <p className="text-sm text-neutral-400">
+                Moda consciente criada em pequenas tiragens. Experiências personalizadas e peças com desenho afetivo.
               </p>
-              <div className="flex justify-center md:justify-start space-x-6">
-                <Instagram size={20} className="hover:text-white cursor-pointer opacity-70 hover:opacity-100 transition-opacity" />
-                <Facebook size={20} className="hover:text-white cursor-pointer opacity-70 hover:opacity-100 transition-opacity" />
-                <Twitter size={20} className="hover:text-white cursor-pointer opacity-70 hover:opacity-100 transition-opacity" />
+              <div className="flex gap-4 mt-6 text-neutral-400">
+                <Instagram size={20} className="hover:text-white" />
+                <Facebook size={20} className="hover:text-white" />
+                <Twitter size={20} className="hover:text-white" />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 md:col-span-2 text-sm">
-              <div>
-                <h4 className="font-bold mb-4 md:mb-6 uppercase tracking-wider text-neutral-300">Comprar</h4>
-                <ul className="space-y-2 md:space-y-3 text-neutral-400">
-                  {['Novidades', 'Vestidos', 'Alfaiataria', 'Acessórios', 'Sale'].map((item) => (
-                    <li key={item}>
-                      <a href="#" className="hover:text-white transition-colors">
-                        {item}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-bold mb-4 md:mb-6 uppercase tracking-wider text-neutral-300">Suporte</h4>
-                <ul className="space-y-2 md:space-y-3 text-neutral-400">
-                  {['Meus Pedidos', 'Trocas', 'Guia de Medidas', 'Fale Conosco'].map((item) => (
-                    <li key={item}>
-                      <a href="#" className="hover:text-white transition-colors">
-                        {item}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            <div>
+              <h4 className="text-xs tracking-[0.4em] uppercase text-neutral-400 mb-4">Loja</h4>
+              <ul className="space-y-2 text-neutral-200 text-sm">
+                {['Novidades', 'Coleções', 'Atelier', 'Presentes', 'Editorial'].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="hover:text-white">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            <div className="md:col-span-1">
-              <h4 className="font-bold mb-4 md:mb-6 text-sm uppercase tracking-wider text-neutral-300 text-center md:text-left">
-                Newsletter
-              </h4>
+            <div>
+              <h4 className="text-xs tracking-[0.4em] uppercase text-neutral-400 mb-4">Atendimento</h4>
+              <ul className="space-y-2 text-neutral-200 text-sm">
+                {['Suporte 24h', 'Trocas', 'Guia de cuidados', 'Clube Lumina'].map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
 
+            <div>
+              <h4 className="text-xs tracking-[0.4em] uppercase text-neutral-400 mb-4">Newsletter</h4>
               {newsletterSucesso ? (
-                <div className="bg-emerald-900/50 text-emerald-200 px-4 py-3 rounded text-sm flex items-center justify-center md:justify-start gap-2 border border-emerald-800">
-                  <Check size={16} /> Inscrito!
+                <div className="bg-emerald-900/40 border border-emerald-800 text-emerald-100 px-4 py-3 rounded-xl flex items-center gap-2">
+                  <Check size={16} /> inscrita!
                 </div>
               ) : (
-                <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-3">
+                <form onSubmit={handleNewsletterSubmit} className="space-y-3">
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     <input
@@ -698,53 +833,44 @@ const LuminaFashion = () => {
                       value={emailNewsletter}
                       onChange={(event) => setEmailNewsletter(event.target.value)}
                       placeholder="seu@email.com"
+                      className="w-full bg-neutral-800 text-sm rounded-full pl-10 pr-4 py-3 border border-neutral-700 focus:outline-none"
                       required
-                      className="bg-neutral-800 border border-neutral-700 text-sm pl-10 pr-4 py-3 w-full focus:ring-1 focus:ring-white outline-none text-white rounded-sm placeholder:text-neutral-600 transition-all focus:bg-neutral-700"
                     />
                   </div>
-                  <button
-                    type="submit"
-                    className="bg-white text-neutral-900 px-4 py-3 text-sm font-bold hover:bg-neutral-200 transition-colors rounded-sm uppercase tracking-wide"
-                  >
-                    Inscrever-se
+                  <button type="submit" className="w-full bg-white text-neutral-900 py-3 rounded-full text-sm font-semibold">
+                    receber convites
                   </button>
                 </form>
               )}
             </div>
           </div>
-
-          <div className="border-t border-neutral-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-neutral-500">
-            <p>&copy; 2025 Lumina Fashion.</p>
+          <div className="mt-12 border-t border-white/10 pt-6 text-xs text-neutral-500 flex flex-col md:flex-row justify-between">
+            <span>© 2025 Lumina Studio</span>
+            <span>Feito no Brasil com fibras certificadas</span>
           </div>
         </div>
       </footer>
 
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-4">
         {chatAberto && (
-          <div className="w-80 h-96 bg-white rounded-2xl shadow-2xl border border-neutral-100 flex flex-col overflow-hidden animate-slide-up origin-bottom-right">
-            <div className="bg-neutral-900 p-4 text-white flex justify-between items-center">
+          <div className="w-80 h-96 bg-white rounded-2xl shadow-2xl border border-neutral-100 flex flex-col overflow-hidden">
+            <div className="bg-neutral-900 text-white px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                <span className="font-bold text-sm">Suporte Lumina</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-sm font-semibold">Suporte Lumina</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setChatAberto(false)}
-                className="hover:bg-white/10 p-1 rounded transition-colors"
-                aria-label="Fechar chat"
-              >
+              <button type="button" onClick={() => setChatAberto(false)} aria-label="Fechar chat">
                 <X size={16} />
               </button>
             </div>
-
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-neutral-50">
+            <div className="flex-1 p-4 space-y-3 overflow-y-auto bg-neutral-50">
               {historicoChat.map((mensagem, index) => (
                 <div key={`chat-${index}`} className={`flex ${mensagem.tipo === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-[85%] p-3 text-sm rounded-2xl shadow-sm ${
+                    className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                       mensagem.tipo === 'user'
                         ? 'bg-neutral-900 text-white rounded-br-none'
-                        : 'bg-white border border-neutral-200 text-neutral-800 rounded-bl-none'
+                        : 'bg-white text-neutral-700 border border-neutral-100 rounded-bl-none'
                     }`}
                   >
                     {mensagem.texto}
@@ -753,20 +879,15 @@ const LuminaFashion = () => {
               ))}
               <div ref={chatEndRef} />
             </div>
-
-            <form onSubmit={handleEnviarMensagemChat} className="p-3 bg-white border-t border-neutral-100 flex gap-2">
+            <form onSubmit={handleEnviarMensagemChat} className="p-3 border-t border-neutral-100 flex gap-2">
               <input
                 type="text"
                 value={chatMensagem}
                 onChange={(event) => setChatMensagem(event.target.value)}
-                placeholder="Digite sua mensagem..."
-                className="flex-1 bg-neutral-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-900 transition-shadow"
+                placeholder="Compartilhe sua dúvida"
+                className="flex-1 bg-neutral-100 rounded-full px-4 py-2 text-sm focus:outline-none"
               />
-              <button
-                type="submit"
-                className="p-2 bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition-colors shadow-sm disabled:opacity-50"
-                disabled={!chatMensagem.trim()}
-              >
+              <button type="submit" className="bg-neutral-900 text-white rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-40" disabled={!chatMensagem.trim()}>
                 <Send size={16} />
               </button>
             </form>
@@ -776,376 +897,192 @@ const LuminaFashion = () => {
         <button
           type="button"
           onClick={() => setChatAberto((prev) => !prev)}
-          className="bg-neutral-900 text-white p-4 rounded-full shadow-xl hover:bg-neutral-800 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center relative group"
+          className="bg-neutral-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center"
           aria-label={chatAberto ? 'Fechar chat' : 'Abrir chat'}
         >
-          {chatAberto ? <X size={24} /> : <MessageCircle size={24} />}
-          {!chatAberto && (
-            <span className="absolute right-full mr-3 bg-white text-neutral-900 text-xs font-bold py-1 px-3 rounded shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              Fale conosco
-            </span>
-          )}
+          {chatAberto ? <X size={22} /> : <MessageCircle size={22} />}
         </button>
       </div>
 
-      {produtoQuickView && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setProdutoQuickView(null)} />
-
-          <div className="bg-white md:rounded-lg shadow-2xl w-full max-w-4xl relative z-10 overflow-hidden animate-slide-up md:animate-scale-in flex flex-col md:flex-row h-full md:max-h-[85vh] md:h-auto">
-            <button
-              onClick={() => setProdutoQuickView(null)}
-              className="absolute top-4 right-4 p-2 bg-white/80 md:bg-white/50 hover:bg-white rounded-full z-20 transition-colors shadow-sm"
-              aria-label="Fechar"
-            >
-              <X size={24} />
-            </button>
-
-            <div className="w-full md:w-1/2 bg-neutral-100 h-[40vh] md:h-auto flex-shrink-0">
-              <img src={produtoQuickView.imagem} alt={produtoQuickView.nome} className="w-full h-full object-cover" />
-            </div>
-
-            <div className="w-full md:w-1/2 p-6 md:p-12 overflow-y-auto flex flex-col h-full bg-white relative -mt-4 md:mt-0 rounded-t-3xl md:rounded-none">
-              <div className="flex-1">
-                <span className="text-xs font-bold tracking-widest text-neutral-500 uppercase mb-2 block">{produtoQuickView.categoria}</span>
-                <h2 className="text-2xl md:text-3xl font-serif font-bold text-neutral-900 mb-2 md:mb-4">{produtoQuickView.nome}</h2>
-                <p className="text-xl md:text-2xl font-medium text-neutral-900 mb-4 md:mb-6">R$ {formatCurrency(produtoQuickView.preco)}</p>
-
-                <p className="text-sm md:text-base text-neutral-600 leading-relaxed mb-6 md:mb-8">{produtoQuickView.descricao}</p>
-
-                <div className="mb-8">
-                  <div className="flex justify-between mb-3">
-                    <span className="text-sm font-bold text-neutral-900">Tamanho</span>
-                    <button className="text-xs text-neutral-500 underline">Guia de medidas</button>
-                  </div>
-                  <div className="flex gap-3">
-                    {produtoQuickView.tamanhos.map((tamanho) => (
-                      <button
-                        key={tamanho}
-                        onClick={() => setTamanhoSelecionado(tamanho)}
-                        className={`w-10 h-10 md:w-12 md:h-12 rounded border flex items-center justify-center text-sm font-medium transition-all ${
-                          tamanhoSelecionado === tamanho
-                            ? 'border-neutral-900 bg-neutral-900 text-white'
-                            : 'border-neutral-200 text-neutral-600 hover:border-neutral-400'
-                        }`}
-                      >
-                        {tamanho}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4 border-t border-neutral-100 md:border-none pb-4 md:pb-0">
-                <button
-                  onClick={() => produtoQuickView && adicionarAoCarrinho(produtoQuickView, tamanhoSelecionado)}
-                  className="flex-1 bg-neutral-900 text-white py-4 font-bold tracking-wider hover:bg-neutral-800 transition-all active:scale-95 shadow-lg text-sm md:text-base"
-                >
-                  ADICIONAR
-                </button>
-                <button
-                  onClick={() => toggleWishlist(produtoQuickView.id)}
-                  className={`w-14 flex items-center justify-center border rounded transition-colors ${
-                    wishlist.includes(produtoQuickView.id)
-                      ? 'border-rose-200 bg-rose-50 text-rose-500'
-                      : 'border-neutral-200 hover:border-neutral-400'
-                  }`}
-                  aria-label="Salvar nos favoritos"
-                >
-                  <Heart size={20} className={wishlist.includes(produtoQuickView.id) ? 'fill-rose-500' : ''} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {userMenuAberto && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setUserMenuAberto(false)} />
-
-          <div className="absolute inset-y-0 right-0 max-w-full flex">
-            <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col h-full animate-slide-in-right transform transition-transform">
-              <div className="flex items-center justify-between px-6 py-6 border-b border-neutral-100 bg-white">
-                <h2 className="text-xl font-serif font-bold text-neutral-900">
-                  {usuario ? `Olá, ${usuario.nome}` : viewAuth === 'login' ? 'Entrar' : 'Criar Conta'}
-                </h2>
-                <button onClick={() => setUserMenuAberto(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors" aria-label="Fechar painel do usuário">
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 md:p-8">
-                {usuario ? (
-                  <div className="space-y-8 animate-fade-in">
-                    <div className="flex items-center gap-4 pb-8 border-b border-neutral-100">
-                      <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center text-neutral-400">
-                        <User size={32} />
-                      </div>
+        <div className="fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setUserMenuAberto(false)} />
+          <div className="absolute inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-in-right">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100">
+              <h2 className="text-xl font-serif font-semibold">{usuario ? `Olá, ${usuario.nome}` : viewAuth === 'login' ? 'Entrar' : 'Criar conta'}</h2>
+              <button onClick={() => setUserMenuAberto(false)} aria-label="Fechar painel">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {usuario ? (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500">
+                      <User size={28} />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{usuario.nome}</p>
+                      <p className="text-sm text-neutral-500">{usuario.email}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {[{ label: 'Meus pedidos', icon: Package }, { label: 'Lista de desejos', icon: Heart }, { label: 'Endereços salvos', icon: MapPin }, { label: 'Cartões', icon: CreditCard }, { label: 'Preferências', icon: Settings }].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button key={item.label} type="button" className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 rounded-xl">
+                          <div className="flex items-center gap-3 text-neutral-600">
+                            <Icon size={18} />
+                            <span className="font-medium">{item.label}</span>
+                          </div>
+                          <ChevronRight size={16} className="text-neutral-300" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button type="button" onClick={handleLogout} className="w-full text-center py-3 rounded-xl bg-neutral-900 text-white font-semibold">
+                    sair
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <form onSubmit={handleAuthSubmit} className="space-y-4">
+                    {viewAuth === 'cadastro' && (
                       <div>
-                        <p className="font-bold text-lg text-neutral-900">{usuario.nome}</p>
-                        <p className="text-sm text-neutral-500">{usuario.email}</p>
+                        <label className="text-sm font-semibold text-neutral-600">Nome completo</label>
+                        <input
+                          type="text"
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 mt-1"
+                          value={authForm.nome}
+                          onChange={(event) => atualizarAuthForm('nome', event.target.value)}
+                          required
+                        />
                       </div>
+                    )}
+                    <div>
+                      <label className="text-sm font-semibold text-neutral-600">E-mail</label>
+                      <input
+                        type="email"
+                        className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 mt-1"
+                        value={authForm.email}
+                        onChange={(event) => atualizarAuthForm('email', event.target.value)}
+                        required
+                      />
                     </div>
-
-                    <div className="space-y-2">
+                    <div>
+                      <div className="flex items-center justify-between text-sm font-semibold text-neutral-600">
+                        <label>Senha</label>
+                        {viewAuth === 'login' && <button type="button" className="text-[11px] underline text-neutral-400">Esqueceu?</button>}
+                      </div>
+                      <input
+                        type="password"
+                        className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 mt-1"
+                        value={authForm.senha}
+                        onChange={(event) => atualizarAuthForm('senha', event.target.value)}
+                        required
+                      />
+                    </div>
+                    <button type="submit" className="w-full bg-neutral-900 text-white py-3 rounded-xl font-semibold">
+                      {viewAuth === 'login' ? 'entrar' : 'Criar conta'}
+                    </button>
+                  </form>
+                  <div className="mt-6">
+                    <div className="text-center text-xs text-neutral-400 uppercase tracking-[0.4em]">ou</div>
+                    <div className="grid grid-cols-3 gap-3 mt-4">
                       {[
-                        { icon: Package, label: 'Meus Pedidos' },
-                        {
-                          icon: Heart,
-                          label: 'Lista de Desejos',
-                          onClick: () => {
-                            setUserMenuAberto(false);
-                          }
-                        },
-                        { icon: MapPin, label: 'Endereços' },
-                        { icon: CreditCard, label: 'Cartões Salvos' },
-                        { icon: Settings, label: 'Configurações da Conta' }
-                      ].map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <button
-                            key={item.label}
-                            type="button"
-                            onClick={() => {
-                              item.onClick?.();
-                            }}
-                            className="w-full flex items-center justify-between p-4 bg-neutral-50 hover:bg-neutral-100 rounded-lg transition-colors group"
-                          >
-                            <div className="flex items-center gap-4 text-neutral-700">
-                              <Icon size={20} />
-                              <span className="font-medium">{item.label}</span>
-                            </div>
-                            <ChevronRight size={16} className="text-neutral-400 group-hover:text-neutral-900" />
-                          </button>
-                        );
-                      })}
+                        { label: 'Google', handler: () => handleSocialLogin('Google') },
+                        { label: 'Apple', handler: () => handleSocialLogin('Apple') },
+                        { label: 'Facebook', handler: () => handleSocialLogin('Facebook') }
+                      ].map((item) => (
+                        <button key={item.label} type="button" onClick={item.handler} className="border border-neutral-200 rounded-xl py-2 text-sm">
+                          {item.label}
+                        </button>
+                      ))}
                     </div>
-
+                  </div>
+                  <div className="mt-6 text-center text-sm text-neutral-500">
+                    {viewAuth === 'login' ? 'Ainda sem conta?' : 'Já faz parte?'}
                     <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center justify-center gap-2 p-4 text-rose-500 font-medium hover:bg-rose-50 rounded-lg transition-colors"
+                      type="button"
+                      onClick={() => setViewAuth((prev) => (prev === 'login' ? 'cadastro' : 'login'))}
+                      className="ml-2 font-semibold"
                     >
-                      <LogOut size={20} />
-                      Sair da Conta
+                      {viewAuth === 'login' ? 'Criar agora' : 'Entrar'}
                     </button>
                   </div>
-                ) : (
-                  <div className="animate-fade-in">
-                    <form onSubmit={handleAuthSubmit} className="space-y-6">
-                      {viewAuth === 'cadastro' && (
-                        <div>
-                          <label className="block text-sm font-bold text-neutral-900 mb-2">Nome completo</label>
-                          <input
-                            type="text"
-                            required
-                            className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-900 transition-colors"
-                            placeholder="Seu nome"
-                            value={authForm.nome}
-                            onChange={(event) => atualizarAuthForm('nome', event.target.value)}
-                          />
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="block text-sm font-bold text-neutral-900 mb-2">E-mail</label>
-                        <input
-                          type="email"
-                          required
-                          className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-900 transition-colors"
-                          placeholder="seu@email.com"
-                          value={authForm.email}
-                          onChange={(event) => atualizarAuthForm('email', event.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between mb-2">
-                          <label className="block text-sm font-bold text-neutral-900">Senha</label>
-                          {viewAuth === 'login' && (
-                            <button type="button" className="text-xs text-neutral-500 underline">
-                              Esqueceu?
-                            </button>
-                          )}
-                        </div>
-                        <input
-                          type="password"
-                          required
-                          className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-900 transition-colors"
-                          placeholder="••••••••"
-                          value={authForm.senha}
-                          onChange={(event) => atualizarAuthForm('senha', event.target.value)}
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="w-full bg-neutral-900 text-white py-4 font-bold tracking-wide hover:bg-neutral-800 rounded-lg transition-transform active:scale-[0.99] shadow-lg"
-                      >
-                        {viewAuth === 'login' ? 'Entrar' : 'Criar Conta'}
-                      </button>
-                    </form>
-
-                    <div className="mt-6">
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-neutral-200" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-white px-2 text-neutral-500">Ou continue com</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 grid grid-cols-3 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handleSocialLogin('Google')}
-                          className="flex items-center justify-center w-full py-2.5 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
-                          title="Google"
-                        >
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                              fill="#4285F4"
-                            />
-                            <path
-                              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                              fill="#34A853"
-                            />
-                            <path
-                              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                              fill="#FBBC05"
-                            />
-                            <path
-                              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                              fill="#EA4335"
-                            />
-                          </svg>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSocialLogin('Apple')}
-                          className="flex items-center justify-center w-full py-2.5 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
-                          title="Apple"
-                        >
-                          <svg className="w-5 h-5 text-black fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24.02-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.74s2.57-.99 3.87-.72c1.61.33 2.85 1.19 3.82 2.8-3.41 1.95-2.82 6.64.65 8.16-.75 2.09-1.9 4.16-3.42 5.99zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-                          </svg>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSocialLogin('Facebook')}
-                          className="flex items-center justify-center w-full py-2.5 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors text-blue-600"
-                          title="Facebook"
-                        >
-                          <Facebook size={20} aria-hidden="true" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-8 text-center pt-8 border-t border-neutral-100">
-                      <p className="text-neutral-500 mb-4">{viewAuth === 'login' ? 'Ainda não tem conta?' : 'Já tem uma conta?'}</p>
-                      <button
-                        type="button"
-                        onClick={() => setViewAuth((prev) => (prev === 'login' ? 'cadastro' : 'login'))}
-                        className="text-neutral-900 font-bold border-b-2 border-neutral-900 pb-0.5 hover:text-neutral-700 hover:border-neutral-700 transition-colors"
-                      >
-                        {viewAuth === 'login' ? 'Cadastre-se agora' : 'Faça login'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {carrinhoAberto && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setCarrinhoAberto(false)} />
-
-          <div className="absolute inset-y-0 right-0 max-w-full flex">
-            <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col h-full animate-slide-in-right transform transition-transform">
-              <div className="flex items-center justify-between px-6 py-6 border-b border-neutral-100 bg-white">
-                <h2 className="text-xl font-serif font-bold text-neutral-900">Sua Sacola ({totalItens})</h2>
-                <button onClick={() => setCarrinhoAberto(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors" aria-label="Fechar carrinho">
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 md:space-y-8">
-                {carrinho.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-neutral-400 space-y-4">
-                    <ShoppingBag size={64} className="opacity-10" />
-                    <p className="text-lg font-medium text-neutral-500">Sua sacola está vazia</p>
-                    <button
-                      onClick={() => setCarrinhoAberto(false)}
-                      className="text-neutral-900 font-bold border-b-2 border-neutral-900 hover:text-neutral-700 hover:border-neutral-700 pb-1"
-                    >
-                      Descobrir novidades
-                    </button>
-                  </div>
-                ) : (
-                  carrinho.map((item) => (
-                    <div key={`${item.id}-${item.tamanho}`} className="flex gap-4 animate-fade-in">
-                      <div className="h-24 w-20 md:h-28 md:w-24 flex-shrink-0 overflow-hidden rounded-md border border-neutral-100 bg-neutral-50">
-                        <img src={item.imagem} alt={item.nome} className="h-full w-full object-cover object-center" />
+        <div className="fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setCarrinhoAberto(false)} />
+          <div className="absolute inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-in-right">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100">
+              <h2 className="text-xl font-serif font-semibold">Sua sacola ({totalItens})</h2>
+              <button onClick={() => setCarrinhoAberto(false)} aria-label="Fechar sacola">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {carrinho.length === 0 ? (
+                <div className="text-center text-neutral-400 py-20">
+                  <ShoppingBag size={48} className="mx-auto mb-4 opacity-30" />
+                  Sua curadoria ainda está vazia
+                </div>
+              ) : (
+                carrinho.map((item) => (
+                  <div key={`${item.id}-${item.tamanho}-${item.imagemSelecionada}`} className="flex gap-4">
+                    <div className="w-24 h-28 rounded-xl overflow-hidden bg-neutral-50">
+                      <img src={item.imagemSelecionada} alt={item.nome} className="h-full w-full object-cover" />
+                    </div>
+                    <div className="flex-1 text-sm">
+                      <div className="flex justify-between font-semibold">
+                        <span className="pr-4">{item.nome}</span>
+                        <span>R$ {formatCurrency(item.preco * item.qtd)}</span>
                       </div>
-                      <div className="flex flex-1 flex-col justify-between py-1">
-                        <div>
-                          <div className="flex justify-between text-sm md:text-base font-medium text-neutral-900">
-                            <h3 className="line-clamp-2 leading-tight pr-2">
-                              <a href="#">{item.nome}</a>
-                            </h3>
-                            <p className="whitespace-nowrap">R$ {formatCurrency(item.preco * item.qtd)}</p>
-                          </div>
-                          <p className="mt-1 text-xs md:text-sm text-neutral-500 capitalize">{item.categoria}</p>
-                          <p className="text-[10px] md:text-xs font-bold text-neutral-400 mt-1 uppercase">Tam: {item.tamanho}</p>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center border border-neutral-200 rounded">
-                            <button
-                              onClick={() => alterarQtd(item.id, item.tamanho, -1)}
-                              className="px-2 md:px-3 py-1 hover:bg-neutral-100 text-neutral-600 disabled:opacity-30"
-                              disabled={item.qtd <= 1}
-                            >
-                              -
-                            </button>
-                            <span className="px-2 font-medium min-w-[1.5rem] text-center">{item.qtd}</span>
-                            <button onClick={() => alterarQtd(item.id, item.tamanho, 1)} className="px-2 md:px-3 py-1 hover:bg-neutral-100 text-neutral-600">
-                              +
-                            </button>
-                          </div>
+                      <p className="text-neutral-400 text-xs mt-1 uppercase tracking-[0.3em]">{item.categoria}</p>
+                      <p className="text-neutral-500 text-xs mt-1">tamanho {item.tamanho}</p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="flex items-center border border-neutral-200 rounded-full">
                           <button
-                            type="button"
-                            onClick={() => removerDoCarrinho(item.id, item.tamanho)}
-                            className="text-xs font-medium text-neutral-400 underline hover:text-rose-500 transition-colors"
+                            className="px-3 py-1"
+                            onClick={() => alterarQtd(item.id, item.tamanho, item.imagemSelecionada, -1)}
+                            disabled={item.qtd <= 1}
                           >
-                            Remover
+                            -
+                          </button>
+                          <span className="px-4">{item.qtd}</span>
+                          <button className="px-3 py-1" onClick={() => alterarQtd(item.id, item.tamanho, item.imagemSelecionada, 1)}>
+                            +
                           </button>
                         </div>
+                        <button
+                          type="button"
+                          className="text-xs text-neutral-400 underline"
+                          onClick={() => removerDoCarrinho(item.id, item.tamanho, item.imagemSelecionada)}
+                        >
+                          remover
+                        </button>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-
-              {carrinho.length > 0 && (
-                <div className="border-t border-neutral-100 px-6 py-6 bg-neutral-50">
-                  <div className="flex justify-between text-base font-medium text-neutral-900 mb-2">
-                    <p>Subtotal</p>
-                    <p>R$ {formatCurrency(totalValor)}</p>
                   </div>
-                  <p className="text-xs text-neutral-500 mb-6">Taxas e frete calculados no checkout.</p>
-                  <button className="w-full bg-neutral-900 text-white py-4 px-6 text-sm font-bold uppercase tracking-wider hover:bg-neutral-800 transition-colors shadow-lg active:transform active:scale-[0.99]">
-                    Finalizar Compra
-                  </button>
-                </div>
+                ))
               )}
             </div>
+            {carrinho.length > 0 && (
+              <div className="border-t border-neutral-100 p-6 space-y-3">
+                <div className="flex justify-between text-base font-semibold">
+                  <span>Subtotal</span>
+                  <span>R$ {formatCurrency(totalValor)}</span>
+                </div>
+                <p className="text-xs text-neutral-400">Frete e impostos calculados no checkout.</p>
+                <button className="w-full bg-neutral-900 text-white py-4 rounded-xl font-semibold tracking-[0.3em]">Finalizar compra</button>
+              </div>
+            )}
           </div>
         </div>
       )}
