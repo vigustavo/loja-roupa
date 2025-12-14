@@ -201,4 +201,10 @@ Passos:
 3. `npm run dev` (porta 5173 com proxy para `http://localhost:4000`)
 
 > Dica: credenciais seeds — Admin `admin@loja.com` / `admin123`, Cliente `cliente@loja.com` / `cliente123`.
+
+## 7. Deploy na Netlify
+
+- O arquivo `netlify.toml` na raiz já informa à Netlify para executar os builds dentro de `frontend/` (`base = "frontend"`), rodar `npm run build` e publicar o conteúdo gerado em `frontend/dist`.
+- A regra de redirect (`/* -> /index.html`) resolve as rotas do SPA para que nenhum caminho interno gere 404.
+- No painel da Netlify basta conectar o repositório, selecionar a branch `main` e manter os campos em branco (o arquivo de configuração assume os valores corretos automaticamente). Reimplante após cada push que altere frontend ou ativos públicos.
 # loja-roupa
