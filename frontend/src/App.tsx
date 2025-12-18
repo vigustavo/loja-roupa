@@ -25,11 +25,12 @@ import {
   Sparkles,
   Smile,
   Sun,
-  Cloud
+  Cloud,
+  ArrowRight
 } from 'lucide-react';
 
-// Tipos adaptados para infantil
-type CategoriaId = 'todos' | 'vestidos' | 'conjuntos' | 'basicos' | 'festa';
+// Tipos adaptados para as novas fileiras
+type CategoriaId = 'todos' | 'novidades' | 'vestidos' | 'blusas' | 'calcas' | 'acessorios' | 'conjuntos';
 
 type AuthView = 'login' | 'cadastro';
 
@@ -37,7 +38,7 @@ interface Produto {
   id: number;
   nome: string;
   preco: number;
-  categoria: Exclude<CategoriaId, 'todos'>;
+  categoria: Exclude<CategoriaId, 'todos' | 'novidades'>;
   imagens: string[];
   imagem: string;
   novo: boolean;
@@ -67,7 +68,7 @@ interface AuthFormState {
   senha: string;
 }
 
-// DADOS DE PRODUTOS INFANTIS (FEMININO) - Links Atualizados e Verificados
+// DADOS DE PRODUTOS ATUALIZADOS PARA AS NOVAS CATEGORIAS
 const PRODUTOS: Produto[] = [
   {
     id: 1,
@@ -94,7 +95,7 @@ const PRODUTOS: Produto[] = [
       'https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&q=80&w=800'
     ],
     imagem: 'https://images.unsplash.com/photo-1604467794349-0b74285de7e7?auto=format&fit=crop&q=80&w=800',
-    novo: false,
+    novo: true,
     tamanhos: ['2', '4', '6', '8'],
     descricao: 'Para brincar o dia todo. Camiseta de algodão orgânico e shortinho confortável com elástico na cintura.'
   },
@@ -102,7 +103,7 @@ const PRODUTOS: Produto[] = [
     id: 3,
     nome: 'Jardineira Jeans Mini',
     preco: 129.90,
-    categoria: 'basicos',
+    categoria: 'calcas',
     imagens: [
       'https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&q=80&w=800',
       'https://images.unsplash.com/photo-1519238263496-61437aeb1134?auto=format&fit=crop&q=80&w=800'
@@ -116,7 +117,7 @@ const PRODUTOS: Produto[] = [
     id: 4,
     nome: 'Vestido Festa de Tule',
     preco: 199.00,
-    categoria: 'festa',
+    categoria: 'vestidos',
     imagens: [
       'https://images.unsplash.com/photo-1632193245229-44677760742a?auto=format&fit=crop&q=80&w=800',
       'https://images.unsplash.com/photo-1503919005314-30d93d07d823?auto=format&fit=crop&q=80&w=800'
@@ -130,7 +131,7 @@ const PRODUTOS: Produto[] = [
     id: 5,
     nome: 'Casaco Teddy Bear',
     preco: 159.90,
-    categoria: 'basicos',
+    categoria: 'blusas',
     imagens: [
       'https://images.unsplash.com/photo-1520466809213-7b9a56adcd45?auto=format&fit=crop&q=80&w=800',
       'https://images.unsplash.com/photo-1514050290518-2e06c710d48a?auto=format&fit=crop&q=80&w=800'
@@ -144,7 +145,7 @@ const PRODUTOS: Produto[] = [
     id: 6,
     nome: 'Legging Conforto',
     preco: 59.90,
-    categoria: 'basicos',
+    categoria: 'calcas',
     imagens: [
       'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=800',
       'https://images.unsplash.com/photo-1617331566395-568b244bbd29?auto=format&fit=crop&q=80&w=800'
@@ -158,7 +159,7 @@ const PRODUTOS: Produto[] = [
     id: 7,
     nome: 'Blusa Gola Boneca',
     preco: 79.90,
-    categoria: 'conjuntos',
+    categoria: 'blusas',
     imagens: [
       'https://images.unsplash.com/photo-1515516089376-88db1e26e9c0?auto=format&fit=crop&q=80&w=800',
       'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?auto=format&fit=crop&q=80&w=800'
@@ -172,7 +173,7 @@ const PRODUTOS: Produto[] = [
     id: 8,
     nome: 'Sapatilha Bailarina',
     preco: 89.90,
-    categoria: 'festa',
+    categoria: 'acessorios',
     imagens: [
       'https://images.unsplash.com/photo-1519417688547-61e5d5338ab0?auto=format&fit=crop&q=80&w=800',
       'https://images.unsplash.com/photo-1547449576-903df886b761?auto=format&fit=crop&q=80&w=800'
@@ -185,11 +186,12 @@ const PRODUTOS: Produto[] = [
 ];
 
 const CATEGORIAS: Array<{ id: CategoriaId; nome: string }> = [
-  { id: 'todos', nome: 'Todas' },
+  { id: 'todos', nome: 'Início' },
   { id: 'vestidos', nome: 'Vestidos' },
-  { id: 'conjuntos', nome: 'Conjuntos' },
-  { id: 'basicos', nome: 'Dia a Dia' },
-  { id: 'festa', nome: 'Festas & Eventos' }
+  { id: 'blusas', nome: 'Blusas' },
+  { id: 'calcas', nome: 'Calças & Shorts' },
+  { id: 'acessorios', nome: 'Acessórios' },
+  { id: 'conjuntos', nome: 'Conjuntos' }
 ];
 
 const LuminaKids = () => {
@@ -218,13 +220,11 @@ const LuminaKids = () => {
   const [newsletterSucesso, setNewsletterSucesso] = useState(false);
   const [heroAnimation, setHeroAnimation] = useState(false);
 
-  const produtosFiltrados = PRODUTOS.filter((produto) => {
-    const matchCategoria = categoriaAtiva === 'todos' || produto.categoria === categoriaAtiva;
-    const matchBusca =
-      produto.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
-      produto.categoria.toLowerCase().includes(termoBusca.toLowerCase());
-    return matchCategoria && matchBusca;
-  });
+  // Filtro de busca global
+  const produtosFiltradosBusca = PRODUTOS.filter((produto) =>
+    produto.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
+    produto.categoria.toLowerCase().includes(termoBusca.toLowerCase())
+  );
 
   useEffect(() => {
     if (chatAberto && chatEndRef.current) {
@@ -361,6 +361,99 @@ const LuminaKids = () => {
   const totalItens = carrinho.reduce((acc, item) => acc + item.qtd, 0);
   const totalValor = carrinho.reduce((acc, item) => acc + item.preco * item.qtd, 0);
 
+  // Componente de Card de Produto
+  const ProductCard = ({ produto }: { produto: Produto }) => (
+    <div className="group relative bg-white p-3 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-50 h-full flex flex-col">
+      <div className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100 relative mb-3">
+        <img
+          src={produto.imagens[0]}
+          alt={produto.nome}
+          className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out cursor-pointer"
+          onClick={() => abrirQuickView(produto)}
+        />
+        {produto.novo && (
+          <span className="absolute top-3 left-3 bg-white/90 text-rose-500 px-3 py-1 text-[10px] font-bold tracking-wider uppercase shadow-sm rounded-full">
+            Novo
+          </span>
+        )}
+        
+        {/* Botões de ação (Hover) */}
+        <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleWishlist(produto.id); }}
+              className={`p-2 rounded-full shadow-md transition-colors ${wishlist.includes(produto.id) ? 'bg-rose-50 text-rose-500' : 'bg-white text-neutral-400 hover:text-rose-500'}`}
+            >
+              <Heart size={18} className={wishlist.includes(produto.id) ? 'fill-rose-500' : ''} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); abrirQuickView(produto); }}
+              className="p-2 bg-white rounded-full shadow-md text-neutral-400 hover:text-blue-500 transition-colors hidden md:block"
+            >
+              <Eye size={18} />
+            </button>
+        </div>
+
+        <button
+          onClick={(event) => {
+            event.stopPropagation();
+            adicionarAoCarrinho(produto);
+          }}
+          className="absolute bottom-3 right-3 p-3 bg-rose-400 text-white rounded-full shadow-lg shadow-rose-200 hover:bg-rose-500 hover:scale-110 active:scale-95 transition-all flex items-center justify-center"
+        >
+          <ShoppingBag size={18} />
+        </button>
+      </div>
+
+      <div className="px-1 pb-2 flex-1 flex flex-col justify-between">
+        <div>
+          <p className="text-[10px] text-neutral-400 uppercase tracking-wide font-bold mb-1">{produto.categoria}</p>
+          <h3 className="text-sm md:text-base font-bold text-neutral-800 line-clamp-1 mb-1 group-hover:text-rose-500 transition-colors cursor-pointer" onClick={() => abrirQuickView(produto)}>
+            {produto.nome}
+          </h3>
+        </div>
+        <div className="flex items-center justify-between mt-2">
+            <p className="text-sm md:text-lg font-bold text-rose-400">R$ {produto.preco.toFixed(2).replace('.', ',')}</p>
+            <p className="text-[10px] text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">{produto.tamanhos[0]}-{produto.tamanhos[produto.tamanhos.length-1]}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Componente de Fileira (Section) - AGORA COM SCROLL HORIZONTAL
+  const ProductSection = ({ title, products }: { title: string, products: Produto[] }) => {
+    if (products.length === 0) return null;
+    return (
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6 px-2">
+          <h3 className="text-xl md:text-2xl font-serif font-bold text-neutral-800 flex items-center gap-2">
+            {title}
+            <div className="h-px bg-rose-100 flex-1 ml-4 hidden md:block w-32" />
+          </h3>
+          <button 
+            onClick={() => {
+                // Lógica para "ver tudo" poderia ir aqui, mudando a categoria ativa
+                const cat = CATEGORIAS.find(c => c.nome === title);
+                if (cat) setCategoriaAtiva(cat.id);
+            }}
+            className="text-sm font-bold text-rose-400 hover:text-rose-500 flex items-center gap-1 group"
+          >
+            Ver tudo <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+          </button>
+        </div>
+        
+        {/* Carrossel Horizontal (Scroll) */}
+        {/* overflow-x-auto permite rolar para o lado. snap-x cria o efeito de "travar" no item */}
+        <div className="flex overflow-x-auto pb-6 gap-4 px-2 -mx-2 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide">
+          {products.map((produto) => (
+            <div key={produto.id} className="min-w-[160px] w-[45%] md:min-w-[260px] md:w-[260px] snap-center flex-shrink-0">
+               <ProductCard produto={produto} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-sans text-neutral-800 selection:bg-rose-200 selection:text-rose-900 overflow-x-hidden">
       {notificacao && (
@@ -393,11 +486,15 @@ const LuminaKids = () => {
             </div>
 
             <div className="hidden md:flex space-x-10 text-sm font-bold tracking-wide text-neutral-500">
-              {['NOVIDADES', 'MENINAS', 'SAPATOS', 'ACESSÓRIOS'].map((item) => (
-                <a key={item} href="#" className="hover:text-rose-400 transition-colors relative group py-2">
-                  {item}
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-rose-400 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
-                </a>
+              {CATEGORIAS.filter(c => c.id !== 'todos').slice(0, 4).map((item) => (
+                <button 
+                  key={item.id} 
+                  onClick={() => setCategoriaAtiva(item.id)}
+                  className={`hover:text-rose-400 transition-colors relative group py-2 ${categoriaAtiva === item.id ? 'text-rose-400' : ''}`}
+                >
+                  {item.nome}
+                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-rose-400 rounded-full transition-all ${categoriaAtiva === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+                </button>
               ))}
             </div>
 
@@ -450,7 +547,7 @@ const LuminaKids = () => {
         </div>
       </nav>
 
-      {/* Menu Mobile - Mantido funcional, visual mais limpo */}
+      {/* Menu Mobile */}
       {menuMobileAberto && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-neutral-800/20 backdrop-blur-sm" onClick={() => setMenuMobileAberto(false)} />
@@ -468,19 +565,17 @@ const LuminaKids = () => {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {['NOVIDADES', 'MENINAS', 'BEBÊS', 'SAPATOS', 'CONTA', 'FAVORITOS'].map((item) => (
+              {CATEGORIAS.map((item) => (
                 <button
-                  key={item}
+                  key={item.id}
                   type="button"
-                  className="w-full flex items-center justify-between py-3 text-lg font-medium text-left text-neutral-600 hover:text-rose-500 hover:pl-2 transition-all"
+                  className={`w-full flex items-center justify-between py-3 text-lg font-medium text-left transition-all ${categoriaAtiva === item.id ? 'text-rose-500 font-bold pl-2' : 'text-neutral-600 hover:text-rose-500 hover:pl-2'}`}
                   onClick={() => {
-                    if (item === 'CONTA') {
-                      setUserMenuAberto(true);
-                    }
+                    setCategoriaAtiva(item.id);
                     setMenuMobileAberto(false);
                   }}
                 >
-                  <span>{item}</span>
+                  <span>{item.nome}</span>
                   <ChevronRight size={18} className="text-neutral-300" />
                 </button>
               ))}
@@ -496,16 +591,13 @@ const LuminaKids = () => {
         </div>
       )}
 
-      {/* HERO - Acolhedor, Confortável e Suave */}
+      {/* HERO SECTION */}
       <div className="relative pt-24 md:pt-32 pb-20 md:pb-32 overflow-hidden">
-         {/* Fundo com formas orgânicas sutis */}
          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-yellow-50 rounded-full blur-3xl opacity-60 -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-rose-50 rounded-full blur-3xl opacity-60 translate-y-1/3 -translate-x-1/4 pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col md:flex-row items-center gap-10 md:gap-16">
-            
-            {/* Texto: Foco no emocional e conforto */}
+          <div className="flex flex-col-reverse md:flex-row items-center gap-10 md:gap-16">
             <div className={`flex-1 text-center md:text-left transition-all duration-1000 transform ${heroAnimation ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-rose-100 text-rose-500 text-sm font-semibold mb-6 shadow-sm">
                  <Heart size={14} className="fill-rose-500" />
@@ -519,7 +611,7 @@ const LuminaKids = () => {
                 Tecidos macios que abraçam, modelagens livres para correr e estampas que contam histórias. Vista quem você mais ama.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <button className="bg-rose-400 text-white px-10 py-4 rounded-full font-bold shadow-lg shadow-rose-200 hover:bg-rose-500 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                <button onClick={() => setCategoriaAtiva('todos')} className="bg-rose-400 text-white px-10 py-4 rounded-full font-bold shadow-lg shadow-rose-200 hover:bg-rose-500 hover:shadow-xl hover:-translate-y-0.5 transition-all">
                   Ver Coleção
                 </button>
                 <button className="bg-white text-neutral-600 border border-neutral-200 px-10 py-4 rounded-full font-bold hover:bg-neutral-50 hover:border-neutral-300 transition-all">
@@ -528,14 +620,10 @@ const LuminaKids = () => {
               </div>
             </div>
 
-            {/* Imagem: Orgânica, suave, formato de "nuvem" ou círculo imperfeito */}
             <div className={`flex-1 w-full max-w-lg md:max-w-xl transition-all duration-1000 delay-200 transform ${heroAnimation ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
                <div className="relative">
-                  {/* Elementos decorativos */}
                   <Star className="absolute -top-6 right-10 text-yellow-300 fill-yellow-200 w-10 h-10 animate-pulse delay-700" />
                   <Cloud className="absolute bottom-10 -left-8 text-blue-100 w-16 h-16 fill-blue-50 opacity-80" />
-                  
-                  {/* Máscara orgânica para a imagem (blob) */}
                   <div className="relative rounded-[3rem] md:rounded-[4rem] overflow-hidden shadow-2xl shadow-rose-100/50 rotate-2 hover:rotate-0 transition-transform duration-700">
                      <img 
                         src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=1000" 
@@ -543,8 +631,6 @@ const LuminaKids = () => {
                         className="w-full h-auto object-cover"
                      />
                   </div>
-                  
-                  {/* Card flutuante "Acolhedor" */}
                    <div className="absolute -bottom-6 -right-4 md:right-4 bg-white p-4 rounded-3xl shadow-xl flex items-center gap-4 animate-bounce-slow">
                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600">
                         <Smile size={24} />
@@ -558,8 +644,6 @@ const LuminaKids = () => {
             </div>
           </div>
         </div>
-         
-         {/* Onda SVG Suave na base */}
          <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
             <svg className="relative block w-[calc(100%+1.3px)] h-[60px] md:h-[100px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
                 <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="fill-white opacity-40"></path>
@@ -568,14 +652,15 @@ const LuminaKids = () => {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-        {/* Filtros - Mais arredondados e cores suaves */}
+        
+        {/* Filtros em forma de Pílulas */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
            <div>
               <h2 className="text-2xl font-serif font-bold text-neutral-800 flex items-center gap-2">
-                 {termoBusca ? `Buscando por "${termoBusca}"` : 'Vitrine de Fofuras'}
+                 {termoBusca ? `Resultados para "${termoBusca}"` : 'Explore nossa loja'}
                  {!termoBusca && <Sparkles size={20} className="text-yellow-400" />}
               </h2>
-              {!termoBusca && <p className="text-neutral-500 text-sm mt-1">Escolhas especiais para o dia a dia</p>}
+              {!termoBusca && <p className="text-neutral-500 text-sm mt-1">Selecione uma categoria ou role para ver tudo</p>}
            </div>
 
             <div className="flex overflow-x-auto pb-4 md:pb-0 gap-3 no-scrollbar">
@@ -598,76 +683,47 @@ const LuminaKids = () => {
             </div>
         </div>
 
-        {produtosFiltrados.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-neutral-50">
-            <div className="mb-4 flex justify-center">
-              <div className="bg-rose-50 p-4 rounded-full">
-                 <Search size={40} className="text-rose-300" />
-              </div>
-            </div>
-            <h3 className="text-xl font-bold text-neutral-800 mb-2">Ops! Nada por aqui.</h3>
-            <p className="text-neutral-500 mb-6">Não encontramos o que você procurou.</p>
-            <button onClick={() => setTermoBusca('')} className="text-rose-500 font-bold hover:text-rose-600 hover:underline">
-              Limpar busca e ver tudo
-            </button>
-          </div>
+        {/* LÓGICA DE EXIBIÇÃO: Se busca ativa, mostra resultado plano. Se não, mostra fileiras ou grid de categoria */}
+        {termoBusca ? (
+            produtosFiltradosBusca.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-neutral-50">
+                    <div className="mb-4 flex justify-center">
+                        <div className="bg-rose-50 p-4 rounded-full">
+                            <Search size={40} className="text-rose-300" />
+                        </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-neutral-800 mb-2">Ops! Nada por aqui.</h3>
+                    <p className="text-neutral-500 mb-6">Não encontramos o que você procurou.</p>
+                    <button onClick={() => setTermoBusca('')} className="text-rose-500 font-bold hover:text-rose-600 hover:underline">
+                        Limpar busca e ver tudo
+                    </button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+                    {produtosFiltradosBusca.map((produto) => (
+                        <ProductCard key={produto.id} produto={produto} />
+                    ))}
+                </div>
+            )
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-            {produtosFiltrados.map((produto) => (
-              <div key={produto.id} className="group relative bg-white p-3 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-50">
-                <div className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100 relative mb-3">
-                  <img
-                    src={produto.imagens[0]}
-                    alt={produto.nome}
-                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out cursor-pointer"
-                    onClick={() => abrirQuickView(produto)}
-                  />
-                  {produto.novo && (
-                    <span className="absolute top-3 left-3 bg-white/90 text-rose-500 px-3 py-1 text-[10px] font-bold tracking-wider uppercase shadow-sm rounded-full">
-                      Novo
-                    </span>
-                  )}
-                  
-                  {/* Botões de ação sobre a imagem (Hover Desktop) */}
-                  <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                     <button
-                        onClick={(e) => { e.stopPropagation(); toggleWishlist(produto.id); }}
-                        className={`p-2 rounded-full shadow-md transition-colors ${wishlist.includes(produto.id) ? 'bg-rose-50 text-rose-500' : 'bg-white text-neutral-400 hover:text-rose-500'}`}
-                     >
-                        <Heart size={18} className={wishlist.includes(produto.id) ? 'fill-rose-500' : ''} />
-                     </button>
-                     <button
-                        onClick={(e) => { e.stopPropagation(); abrirQuickView(produto); }}
-                        className="p-2 bg-white rounded-full shadow-md text-neutral-400 hover:text-blue-500 transition-colors hidden md:block"
-                     >
-                        <Eye size={18} />
-                     </button>
-                  </div>
-
-                  <button
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      adicionarAoCarrinho(produto);
-                    }}
-                    className="absolute bottom-3 right-3 p-3 bg-rose-400 text-white rounded-full shadow-lg shadow-rose-200 hover:bg-rose-500 hover:scale-110 active:scale-95 transition-all flex items-center justify-center"
-                  >
-                    <ShoppingBag size={18} />
-                  </button>
+            // SEM BUSCA ATIVA
+            categoriaAtiva === 'todos' ? (
+                // VIEW 'HOME' COM FILEIRAS (SEÇÕES)
+                <div className="space-y-4">
+                    <ProductSection title="Novidades & Lançamentos" products={PRODUTOS.filter(p => p.novo)} />
+                    <ProductSection title="Vestidos Encantadores" products={PRODUTOS.filter(p => p.categoria === 'vestidos')} />
+                    <ProductSection title="Blusas & Casacos" products={PRODUTOS.filter(p => p.categoria === 'blusas')} />
+                    <ProductSection title="Calças & Shorts" products={PRODUTOS.filter(p => p.categoria === 'calcas')} />
+                    <ProductSection title="Acessórios & Sapatos" products={PRODUTOS.filter(p => p.categoria === 'acessorios')} />
                 </div>
-
-                <div className="px-1 pb-2">
-                  <p className="text-[10px] text-neutral-400 uppercase tracking-wide font-bold mb-1">{produto.categoria}</p>
-                  <h3 className="text-sm md:text-base font-bold text-neutral-800 line-clamp-1 mb-1 group-hover:text-rose-500 transition-colors cursor-pointer" onClick={() => abrirQuickView(produto)}>
-                    {produto.nome}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                     <p className="text-sm md:text-lg font-bold text-rose-400">R$ {produto.preco.toFixed(2).replace('.', ',')}</p>
-                     <p className="text-[10px] text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">{produto.tamanhos[0]}-{produto.tamanhos[produto.tamanhos.length-1]}</p>
-                  </div>
+            ) : (
+                // VIEW CATEGORIA ESPECÍFICA (GRID ÚNICO)
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+                    {PRODUTOS.filter(p => p.categoria === categoriaAtiva || (categoriaAtiva === 'conjuntos' && p.categoria === 'conjuntos')).map((produto) => (
+                        <ProductCard key={produto.id} produto={produto} />
+                    ))}
                 </div>
-              </div>
-            ))}
-          </div>
+            )
         )}
       </main>
 
@@ -710,8 +766,8 @@ const LuminaKids = () => {
              </div>
 
             <div className="md:col-span-1 bg-yellow-50/50 p-6 rounded-3xl border border-yellow-100">
-              <h4 className="font-bold text-neutral-800 mb-2">Clube de Descontos</h4>
-              <p className="text-xs text-neutral-500 mb-4">Entre para nossa lista VIP e ganhe 10% na primeira compra.</p>
+              <h4 className="font-bold text-neutral-800 mb-2">Fique por dentro</h4>
+              <p className="text-xs text-neutral-500 mb-4">Cadastre-se para receber novidades, lançamentos e ofertas exclusivas.</p>
               
               {newsletterSucesso ? (
                 <div className="bg-green-100 text-green-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2 font-medium">
@@ -725,10 +781,10 @@ const LuminaKids = () => {
                     onChange={(event) => setEmailNewsletter(event.target.value)}
                     placeholder="Seu melhor e-mail"
                     required
-                    className="bg-white border-none py-3 px-4 rounded-xl text-sm w-full focus:ring-2 focus:ring-yellow-300 outline-none text-neutral-800 placeholder:text-neutral-400"
+                    className="bg-white border-none py-3 px-4 rounded-xl text-sm w-full focus:ring-2 focus:ring-rose-300 outline-none text-neutral-800 placeholder:text-neutral-400"
                   />
-                  <button type="submit" className="bg-yellow-400 text-yellow-900 px-4 py-3 text-sm font-bold hover:bg-yellow-500 transition-colors rounded-xl shadow-sm">
-                    Quero meu desconto
+                  <button type="submit" className="bg-neutral-900 text-white px-4 py-3 text-sm font-bold hover:bg-neutral-800 transition-colors rounded-xl shadow-sm uppercase tracking-wider">
+                    Receber Novidades
                   </button>
                 </form>
               )}
@@ -912,6 +968,222 @@ const LuminaKids = () => {
                   <Heart size={22} className={wishlist.includes(produtoQuickView.id) ? 'fill-rose-500' : ''} />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Menu Drawer */}
+      {userMenuAberto && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-neutral-800/40 backdrop-blur-sm transition-opacity" onClick={() => setUserMenuAberto(false)} />
+          <div className="absolute inset-y-0 right-0 max-w-full flex">
+            <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col h-full animate-slide-in-right transform transition-transform">
+              <div className="flex items-center justify-between px-6 py-6 border-b border-rose-100 bg-white">
+                <h2 className="text-xl font-serif font-bold text-neutral-900">{usuario ? `Olá, ${usuario.nome}` : viewAuth === 'login' ? 'Entrar' : 'Criar Conta'}</h2>
+                <button onClick={() => setUserMenuAberto(false)} className="p-2 hover:bg-rose-50 rounded-full transition-colors text-neutral-500">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6 md:p-8">
+                {usuario ? (
+                  <div className="space-y-8 animate-fade-in">
+                    <div className="flex items-center gap-4 pb-8 border-b border-neutral-100">
+                      <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-400">
+                        <User size={32} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg text-neutral-900">{usuario.nome}</p>
+                        <p className="text-sm text-neutral-500">{usuario.email}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { icon: Package, label: 'Meus Pedidos' },
+                        { icon: Heart, label: 'Favoritos da Pequena', onClick: () => setUserMenuAberto(false) },
+                        { icon: MapPin, label: 'Endereços de Entrega' },
+                        { icon: CreditCard, label: 'Cartões Salvos' },
+                        { icon: Settings, label: 'Dados da Conta' }
+                      ].map((item) => (
+                        <button
+                          key={item.label}
+                          onClick={item.onClick}
+                          className="w-full flex items-center justify-between p-4 bg-neutral-50 hover:bg-rose-50 rounded-lg transition-colors group"
+                        >
+                          <div className="flex items-center gap-4 text-neutral-700">
+                            <item.icon size={20} className="text-rose-400" />
+                            <span className="font-medium">{item.label}</span>
+                          </div>
+                          <ChevronRight size={16} className="text-neutral-400 group-hover:text-rose-500" />
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 p-4 text-rose-500 font-medium hover:bg-rose-50 rounded-lg transition-colors mt-8 border border-rose-100">
+                      <LogOut size={20} />
+                      Sair da Conta
+                    </button>
+                  </div>
+                ) : (
+                  <div className="animate-fade-in">
+                    <form onSubmit={handleAuthSubmit} className="space-y-6">
+                      {viewAuth === 'cadastro' && (
+                        <div>
+                          <label className="block text-sm font-bold text-neutral-900 mb-2">Nome Completo</label>
+                          <input
+                            type="text"
+                            required
+                            className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-rose-400 transition-colors"
+                            placeholder="Seu nome"
+                            value={authForm.nome}
+                            onChange={(event) => setAuthForm((prev) => ({ ...prev, nome: event.target.value }))}
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-sm font-bold text-neutral-900 mb-2">E-mail</label>
+                        <input
+                          type="email"
+                          required
+                          className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-rose-400 transition-colors"
+                          placeholder="seu@email.com"
+                          value={authForm.email}
+                          onChange={(event) => setAuthForm((prev) => ({ ...prev, email: event.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <label className="block text-sm font-bold text-neutral-900">Senha</label>
+                          {viewAuth === 'login' && <a href="#" className="text-xs text-rose-500 underline">Esqueceu?</a>}
+                        </div>
+                        <input
+                          type="password"
+                          required
+                          className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-rose-400 transition-colors"
+                          placeholder="••••••••"
+                          value={authForm.senha}
+                          onChange={(event) => setAuthForm((prev) => ({ ...prev, senha: event.target.value }))}
+                        />
+                      </div>
+                      <button type="submit" className="w-full bg-neutral-900 text-white py-4 font-bold tracking-wide hover:bg-rose-500 rounded-lg transition-colors active:scale-[0.99] shadow-lg">
+                        {viewAuth === 'login' ? 'ENTRAR' : 'CRIAR CONTA'}
+                      </button>
+                    </form>
+                    <div className="mt-6">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-neutral-200" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-white px-2 text-neutral-500">Ou continue com</span>
+                        </div>
+                      </div>
+                      <div className="mt-6 grid grid-cols-3 gap-3">
+                        {[
+                          { label: 'Google', handler: () => handleSocialLogin('Google') },
+                          { label: 'Apple', handler: () => handleSocialLogin('Apple') },
+                          { label: 'Facebook', handler: () => handleSocialLogin('Facebook') }
+                        ].map((item) => (
+                          <button key={item.label} type="button" onClick={item.handler} className="flex items-center justify-center w-full py-2.5 border border-neutral-200 rounded-lg hover:bg-rose-50 transition-colors text-sm font-medium text-neutral-600" title={item.label}>
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-8 text-center pt-8 border-t border-neutral-100">
+                      <p className="text-neutral-500 mb-4">{viewAuth === 'login' ? 'Primeira vez aqui?' : 'Já tem cadastro?'}</p>
+                      <button onClick={() => setViewAuth((prev) => (prev === 'login' ? 'cadastro' : 'login'))} className="text-neutral-900 font-bold border-b-2 border-neutral-900 pb-0.5 hover:text-rose-500 hover:border-rose-500 transition-colors">
+                        {viewAuth === 'login' ? 'Crie sua conta' : 'Faça login'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cart Drawer */}
+      {carrinhoAberto && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-neutral-800/40 backdrop-blur-sm transition-opacity" onClick={() => setCarrinhoAberto(false)} />
+          <div className="absolute inset-y-0 right-0 max-w-full flex">
+            <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col h-full animate-slide-in-right transform transition-transform">
+              <div className="flex items-center justify-between px-6 py-6 border-b border-rose-100 bg-white">
+                <h2 className="text-xl font-serif font-bold text-neutral-900">Sua Sacola ({totalItens})</h2>
+                <button onClick={() => setCarrinhoAberto(false)} className="p-2 hover:bg-rose-50 rounded-full transition-colors text-neutral-500">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 md:space-y-8">
+                {carrinho.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-neutral-400 space-y-4">
+                    <ShoppingBag size={64} className="opacity-10 text-rose-500" />
+                    <p className="text-lg font-medium text-neutral-500">Sua sacola está vazia</p>
+                    <button onClick={() => setCarrinhoAberto(false)} className="text-rose-500 font-bold border-b-2 border-rose-500 hover:text-rose-700 hover:border-rose-700 pb-1">
+                      Ver roupinhas
+                    </button>
+                  </div>
+                ) : (
+                  carrinho.map((item) => (
+                    <div key={`${item.id}-${item.tamanho}`} className="flex gap-4 animate-fade-in group">
+                      <div className="h-24 w-20 md:h-28 md:w-24 flex-shrink-0 overflow-hidden rounded-lg border border-neutral-100 bg-neutral-50 relative">
+                        <img
+                          src={item.imagemSelecionada}
+                          alt={item.nome}
+                          className="h-full w-full object-cover object-center"
+                        />
+                      </div>
+                      <div className="flex flex-1 flex-col justify-between py-1">
+                        <div>
+                          <div className="flex justify-between text-sm md:text-base font-bold text-neutral-900">
+                            <h3 className="line-clamp-2 leading-tight pr-2">
+                              {item.nome}
+                            </h3>
+                            <p className="whitespace-nowrap text-rose-500">R$ {(item.preco * item.qtd).toFixed(2).replace('.', ',')}</p>
+                          </div>
+                          <p className="mt-1 text-xs md:text-sm text-neutral-500 capitalize">{item.categoria}</p>
+                          <p className="text-[10px] md:text-xs font-bold text-neutral-400 mt-1 uppercase">Idade: {item.tamanho} anos</p>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center border border-neutral-200 rounded-lg overflow-hidden">
+                            <button
+                              onClick={() => alterarQtd(item.id, item.tamanho, -1)}
+                              className="px-2 md:px-3 py-1 hover:bg-neutral-100 text-neutral-600 disabled:opacity-30"
+                              disabled={item.qtd <= 1}
+                            >
+                              -
+                            </button>
+                            <span className="px-2 font-medium min-w-[1.5rem] text-center bg-neutral-50">{item.qtd}</span>
+                            <button onClick={() => alterarQtd(item.id, item.tamanho, 1)} className="px-2 md:px-3 py-1 hover:bg-neutral-100 text-neutral-600">
+                              +
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removerDoCarrinho(item.id, item.tamanho)}
+                            className="text-xs font-medium text-neutral-400 underline hover:text-rose-500 transition-colors"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              {carrinho.length > 0 && (
+                <div className="border-t border-rose-100 px-6 py-6 bg-rose-50/30">
+                  <div className="flex justify-between text-base font-bold text-neutral-900 mb-2">
+                    <p>Subtotal</p>
+                    <p>R$ {totalValor.toFixed(2).replace('.', ',')}</p>
+                  </div>
+                  <p className="text-xs text-neutral-500 mb-6">Frete grátis para compras acima de R$ 300,00.</p>
+                  <button className="w-full bg-rose-500 text-white py-4 px-6 text-sm font-bold uppercase tracking-wider hover:bg-rose-600 transition-colors shadow-lg active:transform active:scale-[0.99] rounded-xl">
+                    Finalizar Compra
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
