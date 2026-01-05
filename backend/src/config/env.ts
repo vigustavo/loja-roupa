@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const requiredVars = ['PORT', 'JWT_SECRET'];
+const requiredVars = ['PORT', 'JWT_SECRET', 'DATABASE_URL'];
 
 requiredVars.forEach((key) => {
   if (!process.env[key]) {
@@ -13,5 +13,8 @@ requiredVars.forEach((key) => {
 export const env = {
   port: Number(process.env.PORT) || 4000,
   nodeEnv: process.env.NODE_ENV || 'development',
-  jwtSecret: process.env.JWT_SECRET || 'super-secret-development-key'
+  jwtSecret: process.env.JWT_SECRET || 'super-secret-development-key',
+  databaseUrl: process.env.DATABASE_URL || '',
+  poolDatabaseUrl: process.env.POOL_DATABASE_URL || process.env.DATABASE_URL || '',
+  shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL || process.env.DATABASE_URL || ''
 };

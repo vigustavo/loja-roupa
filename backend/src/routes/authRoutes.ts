@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { db } from '../data/store.js';
 import { comparePassword, generateToken, hashPassword } from '../utils/security.js';
-import { v4 as uuid } from 'uuid';
+import { prisma } from '../config/prisma.js';
+import crypto from 'crypto';
 
 const router = Router();
 
@@ -18,7 +18,7 @@ router.post('/admin/login', async (req, res) => {
   }
 
   const { email, password } = parsed.data;
-  const user = db.users.find((u) => u.email === email && u.role === 'admin');
+  const user = await prisma.user.findFirst({ where: { email, role: 'admin' } });
 
   if (!user) {
     return res.status(401).json({ message: 'Credenciais inválidas' });
@@ -33,7 +33,7 @@ router.post('/admin/login', async (req, res) => {
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 
-router.post('/admin/forgot', (req, res) => {
+router.post('/admin/forgot', async (req, res) => {
   const emailSchema = z.object({ email: z.string().email() });
   const parsed = emailSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -41,12 +41,23 @@ router.post('/admin/forgot', (req, res) => {
   }
 
   const { email } = parsed.data;
-  const user = db.users.find((u) => u.email === email && u.role === 'admin');
+  const user = await prisma.user.findFirst({ where: { email, role: 'admin' } });
   if (!user) {
     return res.status(404).json({ message: 'Admin não encontrado' });
   }
 
-  res.json({ message: 'Token de recuperação enviado (mock)', token: uuid() });
+  const token = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1h
+
+  await prisma.passwordReset.create({
+    data: {
+      token,
+      userId: user.id,
+      expiresAt
+    }
+  });
+
+  res.json({ message: 'Token de recuperação gerado', token });
 });
 
 router.post('/client/register', async (req, res) => {
@@ -61,26 +72,24 @@ router.post('/client/register', async (req, res) => {
   }
 
   const { name, email, password } = parsed.data;
-  const exists = db.users.some((u) => u.email === email);
+
+  const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) {
     return res.status(409).json({ message: 'E-mail já cadastrado' });
   }
 
-  const newUser = {
-    id: uuid(),
-    name,
-    email,
-    passwordHash: await hashPassword(password),
-    role: 'client' as const,
-    status: 'active' as const,
-    addresses: [],
-    favorites: [],
-    createdAt: new Date()
-  };
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email,
+      passwordHash: await hashPassword(password),
+      role: 'client',
+      status: 'active'
+    }
+  });
 
-  db.users.push(newUser);
-  const token = generateToken(newUser);
-  res.status(201).json({ token, user: { id: newUser.id, name, email, role: newUser.role } });
+  const token = generateToken(user);
+  res.status(201).json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 
 router.post('/client/login', async (req, res) => {
@@ -90,7 +99,7 @@ router.post('/client/login', async (req, res) => {
   }
 
   const { email, password } = parsed.data;
-  const user = db.users.find((u) => u.email === email && u.role === 'client');
+  const user = await prisma.user.findFirst({ where: { email, role: 'client' } });
 
   if (!user) {
     return res.status(401).json({ message: 'Credenciais inválidas' });
@@ -103,6 +112,60 @@ router.post('/client/login', async (req, res) => {
 
   const token = generateToken(user);
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+});
+
+router.post('/client/forgot', async (req, res) => {
+  const emailSchema = z.object({ email: z.string().email() });
+  const parsed = emailSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json(parsed.error.flatten());
+  }
+
+  const { email } = parsed.data;
+  const user = await prisma.user.findFirst({ where: { email, role: 'client' } });
+  if (!user) {
+    return res.status(404).json({ message: 'Usuário não encontrado' });
+  }
+
+  const token = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1h
+
+  await prisma.passwordReset.create({
+    data: {
+      token,
+      userId: user.id,
+      expiresAt
+    }
+  });
+
+  res.json({ message: 'Token de recuperação gerado', token });
+});
+
+router.post('/client/reset', async (req, res) => {
+  const schema = z.object({ token: z.string().min(10), password: z.string().min(6) });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json(parsed.error.flatten());
+  }
+
+  const { token, password } = parsed.data;
+  const reset = await prisma.passwordReset.findUnique({ where: { token } });
+
+  if (!reset || reset.used || (reset.expiresAt && reset.expiresAt < new Date())) {
+    return res.status(400).json({ message: 'Token inválido ou expirado' });
+  }
+
+  const hashedPassword = await hashPassword(password);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: reset.userId },
+      data: { passwordHash: hashedPassword }
+    }),
+    prisma.passwordReset.update({ where: { id: reset.id }, data: { used: true } })
+  ]);
+
+  res.json({ message: 'Senha redefinida com sucesso' });
 });
 
 export default router;

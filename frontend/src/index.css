@@ -21,6 +21,11 @@
     min-height: 100vh;
   }
 
+  :focus-visible {
+    outline: 2px solid #fb7185;
+    outline-offset: 3px;
+  }
+
   ::selection {
     background-color: #f9c5d0;
     color: #7c1027;

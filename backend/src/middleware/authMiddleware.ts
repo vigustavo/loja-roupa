@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import { db, type User, type UserRole } from '../data/store.js';
+import type { User, UserRole } from '@prisma/client';
+import { prisma } from '../config/prisma.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: User;
@@ -24,14 +25,19 @@ export const authenticate = (req: AuthenticatedRequest, _res: Response, next: Ne
   const token = header.replace('Bearer ', '');
   const payload = decodeToken(token);
 
-  if (payload) {
-    const user = db.users.find((u) => u.id === payload.sub);
-    if (user) {
-      req.user = user;
-    }
+  if (!payload) {
+    return next();
   }
 
-  next();
+  prisma.user
+    .findUnique({ where: { id: payload.sub } })
+    .then((user) => {
+      if (user) {
+        req.user = user;
+      }
+      next();
+    })
+    .catch(() => next());
 };
 
 export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {

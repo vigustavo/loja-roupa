@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import type { User } from '../data/store.js';
+import type { User } from '@prisma/client';
 
 export const hashPassword = async (plain: string) => bcrypt.hash(plain, 10);
 export const comparePassword = async (plain: string, hashed: string) => bcrypt.compare(plain, hashed);
